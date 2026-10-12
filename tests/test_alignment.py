@@ -101,6 +101,15 @@ def test_different_metrics_are_scope_mismatch():
     assert result.relation is Relation.SCOPE_MISMATCH
 
 
+def test_multiword_outcome_is_not_truncated_to_modifier():
+    result = compare(
+        "On dataset CellBench-1, the cobalt catalyst increased reaction yield by 12% at 80 °C.",
+        "On dataset CellBench-1, the cobalt catalyst increased reaction yield by 12% at 80 °C.",
+        kind=ClaimType.QUANTITATIVE,
+    )
+    assert result.relation is Relation.SUPPORT
+
+
 def test_numerical_disagreement_is_not_hidden_by_matching_direction():
     result = compare("Drug A reduces mortality to 10%.", "Drug A reduces mortality to 20%.", kind=ClaimType.QUANTITATIVE)
     assert result.relation is Relation.CONTRADICT

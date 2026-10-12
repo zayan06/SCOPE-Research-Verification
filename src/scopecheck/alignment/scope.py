@@ -26,7 +26,9 @@ _PATTERNS: dict[str, tuple[str, ...]] = {
     "dataset": (r"\b(?:dataset|corpus|benchmark|cohort)\s+(?:of\s+)?([A-Z][\w-]*(?:\s+[A-Z][\w-]*){0,2})", r"\b(?:using|on)\s+(?:the\s+)?(ImageNet|CIFAR-?\d+|MNIST|MIMIC-?IV?|PubMed|Wikipedia)\b"),
     "methodology": (r"\b(randomi[sz]ed controlled trial|observational study|cross-sectional study|longitudinal study|meta-analysis|systematic review|in vitro|in vivo|ablation study|simulation)\b",),
     "intervention": (r"\b(?:treatment|intervention|therapy)\s+(?:with|using|of)\s+([\w-]+(?:\s+[\w-]+){0,2})",),
-    "outcome": (r"\b(?:reduc\w*|increas\w*|improv\w*|decreas\w*|predict\w*|classif\w*|associated with|correlated with|caused?)\s+([a-z][\w-]*)",),
+    # Capture common multiword outcomes before the generic first noun. Without
+    # this, phrases such as "increased reaction yield" become outcome="reaction".
+    "outcome": (r"\b(?:reduc\w*|increas\w*|improv\w*|decreas\w*|predict\w*|classif\w*|associated with|correlated with|caused?)\s+((?:reaction\s+yield|cycle\s+life)|[a-z][\w-]*)",),
     "metric": (r"\b(accuracy|precision|recall|F1(?: score)?|AUC|AUROC|mortality|survival|risk|error rate|latency|sensitivity|specificity)\b",),
     "time_period": (r"\b((?:19|20)\d{2}(?:\s*[-–]\s*(?:19|20)?\d{2})?)\b",),
     "domain": (r"\b(?:in|for|within)\s+(medicine|healthcare|oncology|radiology|education|finance|biology|computer vision|natural language processing|NLP)\b",),

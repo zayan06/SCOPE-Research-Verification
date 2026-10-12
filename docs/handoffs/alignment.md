@@ -3,7 +3,9 @@
 ## Branch and implementation commit
 
 - Branch: `feat/alignment`
-- Implementation commit: `71e7b9561fbcbe07b7a413a6b09c2a35803292f0`
+- Implementation commits: `71e7b9561fbcbe07b7a413a6b09c2a35803292f0`
+  (algorithm) and `7341fca5ebcbc52d482bc523c7cf0f66ea1fc473` (score/documentation
+  refinement).
 - Handoff note is committed as a follow-up documentation commit on the same
   branch.
 

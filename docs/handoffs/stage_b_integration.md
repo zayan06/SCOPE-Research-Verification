@@ -55,6 +55,9 @@ accepts the backend's PDF, DOCX, TXT, and Markdown formats. The core package
 dependencies now include SQLAlchemy and `python-multipart`, both required to
 load the upload routes in a clean install.
 
+The final frontend/backend integration code is committed as
+`c1077a7041612a1e361e4b76a0072c5b62df9518` on `integrate/scope`.
+
 Frontend checks passed after integration: TypeScript typecheck, 10 Vitest tests,
 and the production Vite build. `npm ci` reports 13 advisories in development
 dependencies (5 moderate, 6 high, 2 critical); the frontend handoff notes that

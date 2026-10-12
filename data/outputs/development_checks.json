@@ -1,0 +1,384 @@
+{
+  "benchmark_fixture": "data/benchmarks/development_fixtures.jsonl",
+  "comparator_metrics": {
+    "scope_aware": {
+      "accuracy": 0.8333333333333334,
+      "class_distribution": {
+        "contradict": 1,
+        "insufficient_evidence": 1,
+        "qualify": 1,
+        "scope_mismatch": 1,
+        "support": 1,
+        "unrelated": 1
+      },
+      "confusion_matrix": {
+        "contradict": {
+          "contradict": 1,
+          "insufficient_evidence": 0,
+          "qualify": 0,
+          "scope_mismatch": 0,
+          "support": 0,
+          "unrelated": 0
+        },
+        "insufficient_evidence": {
+          "contradict": 0,
+          "insufficient_evidence": 1,
+          "qualify": 0,
+          "scope_mismatch": 0,
+          "support": 0,
+          "unrelated": 0
+        },
+        "qualify": {
+          "contradict": 0,
+          "insufficient_evidence": 0,
+          "qualify": 1,
+          "scope_mismatch": 0,
+          "support": 0,
+          "unrelated": 0
+        },
+        "scope_mismatch": {
+          "contradict": 0,
+          "insufficient_evidence": 0,
+          "qualify": 0,
+          "scope_mismatch": 1,
+          "support": 0,
+          "unrelated": 0
+        },
+        "support": {
+          "contradict": 0,
+          "insufficient_evidence": 0,
+          "qualify": 1,
+          "scope_mismatch": 0,
+          "support": 0,
+          "unrelated": 0
+        },
+        "unrelated": {
+          "contradict": 0,
+          "insufficient_evidence": 0,
+          "qualify": 0,
+          "scope_mismatch": 0,
+          "support": 0,
+          "unrelated": 1
+        }
+      },
+      "macro_f1": 0.7777777777777778,
+      "per_class": {
+        "contradict": {
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "support": 1
+        },
+        "insufficient_evidence": {
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "support": 1
+        },
+        "qualify": {
+          "f1": 0.6666666666666666,
+          "precision": 0.5,
+          "recall": 1.0,
+          "support": 1
+        },
+        "scope_mismatch": {
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "support": 1
+        },
+        "support": {
+          "f1": 0.0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "support": 1
+        },
+        "unrelated": {
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "support": 1
+        }
+      },
+      "sample_count": 6
+    },
+    "text_only": {
+      "accuracy": 0.6666666666666666,
+      "class_distribution": {
+        "contradict": 1,
+        "insufficient_evidence": 1,
+        "qualify": 1,
+        "scope_mismatch": 1,
+        "support": 1,
+        "unrelated": 1
+      },
+      "confusion_matrix": {
+        "contradict": {
+          "contradict": 1,
+          "insufficient_evidence": 0,
+          "qualify": 0,
+          "scope_mismatch": 0,
+          "support": 0,
+          "unrelated": 0
+        },
+        "insufficient_evidence": {
+          "contradict": 0,
+          "insufficient_evidence": 1,
+          "qualify": 0,
+          "scope_mismatch": 0,
+          "support": 0,
+          "unrelated": 0
+        },
+        "qualify": {
+          "contradict": 0,
+          "insufficient_evidence": 0,
+          "qualify": 1,
+          "scope_mismatch": 0,
+          "support": 0,
+          "unrelated": 0
+        },
+        "scope_mismatch": {
+          "contradict": 0,
+          "insufficient_evidence": 0,
+          "qualify": 0,
+          "scope_mismatch": 0,
+          "support": 1,
+          "unrelated": 0
+        },
+        "support": {
+          "contradict": 0,
+          "insufficient_evidence": 0,
+          "qualify": 1,
+          "scope_mismatch": 0,
+          "support": 0,
+          "unrelated": 0
+        },
+        "unrelated": {
+          "contradict": 0,
+          "insufficient_evidence": 0,
+          "qualify": 0,
+          "scope_mismatch": 0,
+          "support": 0,
+          "unrelated": 1
+        }
+      },
+      "macro_f1": 0.611111111111111,
+      "per_class": {
+        "contradict": {
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "support": 1
+        },
+        "insufficient_evidence": {
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "support": 1
+        },
+        "qualify": {
+          "f1": 0.6666666666666666,
+          "precision": 0.5,
+          "recall": 1.0,
+          "support": 1
+        },
+        "scope_mismatch": {
+          "f1": 0.0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "support": 1
+        },
+        "support": {
+          "f1": 0.0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "support": 1
+        },
+        "unrelated": {
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "support": 1
+        }
+      },
+      "sample_count": 6
+    }
+  },
+  "comparator_predictions": {
+    "scope_aware": [
+      {
+        "pair_id": "syn-001",
+        "predicted_label": "qualify"
+      },
+      {
+        "pair_id": "syn-002",
+        "predicted_label": "contradict"
+      },
+      {
+        "pair_id": "syn-003",
+        "predicted_label": "qualify"
+      },
+      {
+        "pair_id": "syn-004",
+        "predicted_label": "scope_mismatch"
+      },
+      {
+        "pair_id": "syn-005",
+        "predicted_label": "insufficient_evidence"
+      },
+      {
+        "pair_id": "syn-006",
+        "predicted_label": "unrelated"
+      }
+    ],
+    "text_only": [
+      {
+        "pair_id": "syn-001",
+        "predicted_label": "qualify"
+      },
+      {
+        "pair_id": "syn-002",
+        "predicted_label": "contradict"
+      },
+      {
+        "pair_id": "syn-003",
+        "predicted_label": "qualify"
+      },
+      {
+        "pair_id": "syn-004",
+        "predicted_label": "support"
+      },
+      {
+        "pair_id": "syn-005",
+        "predicted_label": "insufficient_evidence"
+      },
+      {
+        "pair_id": "syn-006",
+        "predicted_label": "unrelated"
+      }
+    ]
+  },
+  "evaluation_type": "synthetic_development_check",
+  "retrieval_baselines": {
+    "bm25": {
+      "metrics": {
+        "mrr": 1.0,
+        "query_count": 6,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@6": 1.0
+      },
+      "ranked_ids": {
+        "syn-001": [
+          "syn-001",
+          "syn-003",
+          "syn-002",
+          "syn-006",
+          "syn-004",
+          "syn-005"
+        ],
+        "syn-002": [
+          "syn-002",
+          "syn-003",
+          "syn-005",
+          "syn-001",
+          "syn-004",
+          "syn-006"
+        ],
+        "syn-003": [
+          "syn-003",
+          "syn-001",
+          "syn-005",
+          "syn-002",
+          "syn-004",
+          "syn-006"
+        ],
+        "syn-004": [
+          "syn-004",
+          "syn-001",
+          "syn-002",
+          "syn-003",
+          "syn-005",
+          "syn-006"
+        ],
+        "syn-005": [
+          "syn-005",
+          "syn-001",
+          "syn-002",
+          "syn-003",
+          "syn-004",
+          "syn-006"
+        ],
+        "syn-006": [
+          "syn-006",
+          "syn-004",
+          "syn-001",
+          "syn-002",
+          "syn-003",
+          "syn-005"
+        ]
+      }
+    },
+    "tfidf": {
+      "metrics": {
+        "mrr": 1.0,
+        "query_count": 6,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@6": 1.0
+      },
+      "ranked_ids": {
+        "syn-001": [
+          "syn-001",
+          "syn-003",
+          "syn-002",
+          "syn-006",
+          "syn-004",
+          "syn-005"
+        ],
+        "syn-002": [
+          "syn-002",
+          "syn-003",
+          "syn-005",
+          "syn-001",
+          "syn-004",
+          "syn-006"
+        ],
+        "syn-003": [
+          "syn-003",
+          "syn-001",
+          "syn-005",
+          "syn-002",
+          "syn-004",
+          "syn-006"
+        ],
+        "syn-004": [
+          "syn-004",
+          "syn-001",
+          "syn-002",
+          "syn-003",
+          "syn-005",
+          "syn-006"
+        ],
+        "syn-005": [
+          "syn-005",
+          "syn-001",
+          "syn-002",
+          "syn-003",
+          "syn-004",
+          "syn-006"
+        ],
+        "syn-006": [
+          "syn-006",
+          "syn-004",
+          "syn-001",
+          "syn-002",
+          "syn-003",
+          "syn-005"
+        ]
+      }
+    }
+  },
+  "sample_count": 6,
+  "warning": "Fabricated fixtures; these metrics are software development checks, not scientific evaluation results."
+}

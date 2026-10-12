@@ -1,0 +1,293 @@
+{
+  "fixture_notice": "Synthetic development text; not scientific evidence or benchmark evaluation.",
+  "requests": {
+    "create_project": {
+      "name": "Local pipeline demonstration",
+      "description": "Synthetic development fixture"
+    },
+    "upload_document": {
+      "project_id": "06cad8d2-f1af-4feb-83fd-728c8633f79a",
+      "filename": "development_demo.md",
+      "content_type": "text/markdown"
+    },
+    "analyze": {
+      "draft_text": "On dataset CellBench-1, the cobalt catalyst increased reaction yield by 12% at 80 °C.",
+      "selected_document_ids": [
+        "19786da9-0538-453e-a85e-2a0d8da1901b"
+      ]
+    }
+  },
+  "responses": {
+    "create_project": {
+      "id": "06cad8d2-f1af-4feb-83fd-728c8633f79a",
+      "name": "Local pipeline demonstration",
+      "description": "Synthetic development fixture",
+      "created_at": "2026-10-12T17:58:14.292787",
+      "updated_at": "2026-10-12T17:58:14.292792"
+    },
+    "upload_document": {
+      "document_id": "19786da9-0538-453e-a85e-2a0d8da1901b",
+      "filename": "development_demo.md",
+      "status": "ready",
+      "message": "Parsed version 1 into 1 evidence chunks."
+    },
+    "analyze": {
+      "analyses": [
+        {
+          "claim": {
+            "id": "63d292ae35d51c5e2a08",
+            "text": "On dataset CellBench-1, the cobalt catalyst increased reaction yield by 12% at 80 °C.",
+            "document_id": "draft",
+            "claim_type": "quantitative",
+            "scope": {
+              "population": {
+                "status": "unknown",
+                "value": null
+              },
+              "dataset": {
+                "status": "known",
+                "value": "dataset CellBench-1"
+              },
+              "methodology": {
+                "status": "unknown",
+                "value": null
+              },
+              "intervention": {
+                "status": "unknown",
+                "value": null
+              },
+              "outcome": {
+                "status": "known",
+                "value": "yield"
+              },
+              "metric": {
+                "status": "unknown",
+                "value": null
+              },
+              "time_period": {
+                "status": "unknown",
+                "value": null
+              },
+              "domain": {
+                "status": "unknown",
+                "value": null
+              },
+              "conditions": {
+                "status": "unknown",
+                "value": null
+              },
+              "certainty": {
+                "status": "unknown",
+                "value": null
+              },
+              "direction": {
+                "status": "known",
+                "value": "positive"
+              },
+              "numerical_values": {
+                "status": "known",
+                "value": [
+                  "1",
+                  "12%",
+                  "80 °C"
+                ]
+              }
+            },
+            "source_span": {
+              "document_id": "draft",
+              "section_id": null,
+              "page_number": null,
+              "start_offset": 0,
+              "end_offset": 85,
+              "exact_text": "On dataset CellBench-1, the cobalt catalyst increased reaction yield by 12% at 80 °C."
+            },
+            "extraction_method": "rule_based"
+          },
+          "retrieval_hits": [
+            {
+              "chunk": {
+                "id": "19786da9-0538-453e-a85e-2a0d8da1901b:86c54398fb87230f53ca",
+                "document_id": "19786da9-0538-453e-a85e-2a0d8da1901b",
+                "text": "On dataset CellBench-1, the cobalt catalyst increased reaction yield by 12% at 80 °C.",
+                "section_name": null,
+                "page_number": null,
+                "start_offset": 0,
+                "end_offset": 85,
+                "metadata": {
+                  "source_filename": "development_demo.md",
+                  "parser": "markdown",
+                  "section_path": null,
+                  "block_types": [
+                    "paragraph"
+                  ],
+                  "document_metadata": {
+                    "filename": "development_demo.md"
+                  },
+                  "canonical_text_offsets": true
+                }
+              },
+              "score": 1.000000000000001,
+              "rank": 1,
+              "retrieval_method": "tfidf"
+            }
+          ],
+          "comparisons": [
+            {
+              "claim_id": "63d292ae35d51c5e2a08",
+              "evidence_chunk_id": "19786da9-0538-453e-a85e-2a0d8da1901b:86c54398fb87230f53ca",
+              "relation": "support",
+              "confidence": 0.8279310344827586,
+              "scope_compatibility": "partially_compatible",
+              "dimension_comparisons": [
+                {
+                  "dimension": "population_compatibility",
+                  "status": "unknown",
+                  "explanation": "Population: claim=unknown; evidence=unknown."
+                },
+                {
+                  "dimension": "dataset_compatibility",
+                  "status": "partially_compatible",
+                  "explanation": "Dataset: claim=dataset CellBench-1; evidence=cellbench-1."
+                },
+                {
+                  "dimension": "methodological_compatibility",
+                  "status": "unknown",
+                  "explanation": "Methodology: claim=unknown; evidence=unknown."
+                },
+                {
+                  "dimension": "semantic_agreement",
+                  "status": "unknown",
+                  "explanation": "Intervention: claim=unknown; evidence=unknown."
+                },
+                {
+                  "dimension": "outcome_metric_compatibility",
+                  "status": "partially_compatible",
+                  "explanation": "Outcome: claim=yield; evidence=reaction yield."
+                },
+                {
+                  "dimension": "outcome_metric_compatibility",
+                  "status": "unknown",
+                  "explanation": "Metric: claim=unknown; evidence=unknown."
+                },
+                {
+                  "dimension": "experimental_condition_compatibility",
+                  "status": "unknown",
+                  "explanation": "Time period: claim=unknown; evidence=unknown."
+                },
+                {
+                  "dimension": "experimental_condition_compatibility",
+                  "status": "unknown",
+                  "explanation": "Domain: claim=unknown; evidence=unknown."
+                },
+                {
+                  "dimension": "experimental_condition_compatibility",
+                  "status": "compatible",
+                  "explanation": "Conditions: claim=['80']; evidence=['80']."
+                },
+                {
+                  "dimension": "certainty_generalization_mismatch",
+                  "status": "unknown",
+                  "explanation": "Certainty: claim=unknown; evidence=unknown."
+                },
+                {
+                  "dimension": "relation_direction_agreement",
+                  "status": "compatible",
+                  "explanation": "Direction: claim=positive; evidence=positive."
+                },
+                {
+                  "dimension": "numerical_agreement",
+                  "status": "partially_compatible",
+                  "explanation": "Numerical values: claim=['1', '12%', '80 °C']; evidence=['1', '12', '80']."
+                }
+              ],
+              "explanation": "The passage addresses the same proposition and asserts the same outcome direction. This rule-based match is a review aid and does not establish scientific truth. Scope compatibility score=0.672 over known weighted dimensions; unknown dimensions were excluded.  Support is a heuristic label, not a calibrated probability.",
+              "evidence_quote": "On dataset CellBench-1, the cobalt catalyst increased reaction yield by 12% at 80 °C.",
+              "recommended_action": "no_automated_recommendation",
+              "model_version": "rules/0.1.0:scope_aware"
+            }
+          ]
+        }
+      ],
+      "status": "completed"
+    },
+    "analysis_results": {
+      "analysis_run_id": "6566f778-10ab-4c88-b4ee-8d4f284115e4",
+      "status": "completed",
+      "results": [
+        {
+          "claim_id": "63d292ae35d51c5e2a08",
+          "evidence_chunk_id": "19786da9-0538-453e-a85e-2a0d8da1901b:86c54398fb87230f53ca",
+          "relation": "support",
+          "confidence": 0.8279310344827586,
+          "scope_compatibility": "partially_compatible",
+          "dimension_comparisons": [
+            {
+              "dimension": "population_compatibility",
+              "status": "unknown",
+              "explanation": "Population: claim=unknown; evidence=unknown."
+            },
+            {
+              "dimension": "dataset_compatibility",
+              "status": "partially_compatible",
+              "explanation": "Dataset: claim=dataset CellBench-1; evidence=cellbench-1."
+            },
+            {
+              "dimension": "methodological_compatibility",
+              "status": "unknown",
+              "explanation": "Methodology: claim=unknown; evidence=unknown."
+            },
+            {
+              "dimension": "semantic_agreement",
+              "status": "unknown",
+              "explanation": "Intervention: claim=unknown; evidence=unknown."
+            },
+            {
+              "dimension": "outcome_metric_compatibility",
+              "status": "partially_compatible",
+              "explanation": "Outcome: claim=yield; evidence=reaction yield."
+            },
+            {
+              "dimension": "outcome_metric_compatibility",
+              "status": "unknown",
+              "explanation": "Metric: claim=unknown; evidence=unknown."
+            },
+            {
+              "dimension": "experimental_condition_compatibility",
+              "status": "unknown",
+              "explanation": "Time period: claim=unknown; evidence=unknown."
+            },
+            {
+              "dimension": "experimental_condition_compatibility",
+              "status": "unknown",
+              "explanation": "Domain: claim=unknown; evidence=unknown."
+            },
+            {
+              "dimension": "experimental_condition_compatibility",
+              "status": "compatible",
+              "explanation": "Conditions: claim=['80']; evidence=['80']."
+            },
+            {
+              "dimension": "certainty_generalization_mismatch",
+              "status": "unknown",
+              "explanation": "Certainty: claim=unknown; evidence=unknown."
+            },
+            {
+              "dimension": "relation_direction_agreement",
+              "status": "compatible",
+              "explanation": "Direction: claim=positive; evidence=positive."
+            },
+            {
+              "dimension": "numerical_agreement",
+              "status": "partially_compatible",
+              "explanation": "Numerical values: claim=['1', '12%', '80 °C']; evidence=['1', '12', '80']."
+            }
+          ],
+          "explanation": "The passage addresses the same proposition and asserts the same outcome direction. This rule-based match is a review aid and does not establish scientific truth. Scope compatibility score=0.672 over known weighted dimensions; unknown dimensions were excluded.  Support is a heuristic label, not a calibrated probability.",
+          "evidence_quote": "On dataset CellBench-1, the cobalt catalyst increased reaction yield by 12% at 80 °C.",
+          "recommended_action": "no_automated_recommendation",
+          "model_version": "rules/0.1.0:scope_aware"
+        }
+      ]
+    }
+  }
+}

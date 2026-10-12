@@ -2,95 +2,148 @@
 
 **Scope-Aware Claim–Evidence Alignment for Scientific Literature Verification**
 
-## Overview
-
-SCOPE is a research prototype for helping researchers inspect whether selected
-literature passages support, contradict, qualify, or insufficiently address
-claims in a draft. It reports evidence alignment for human review; it does not
-determine objective scientific truth.
-
-## Problem statement and research objective
-
-Semantic retrieval can find passages about the same topic without establishing
-that they address the same conclusion under compatible populations, datasets,
-methods, outcomes, metrics, or experimental conditions. For example, evidence
-that a method improved accuracy on one dataset does not by itself establish a
-draft claim that it improves accuracy across all datasets.
-
-The research objective is to make those scope dimensions explicit in the
-claim–evidence comparison and preserve traceability to source passages. The
-central hypothesis is that explicit scope modeling may help distinguish direct
-contradictions from claims that differ in experimental context. This hypothesis
-has not yet been evaluated.
-
-## Proposed methodology
-
-The planned pipeline parses scientific documents into source-addressable
-evidence chunks, extracts atomic claims and scope fields, retrieves candidate
-passages, compares claims and passages across explicit dimensions, and
-evaluates results against documented benchmarks. Missing scope is represented
-as unknown rather than treated as agreement. Research design and literature
-drafts are being developed on the dedicated literature workstream branch and
-require review before integration.
-
-## Architecture
-
-The Python package under `src/scopecheck/` defines shared Pydantic contracts
-and module interfaces. `api/` contains the minimal FastAPI application;
-`web/` is reserved for the React client. Integration boundaries and planned
-data flow are documented in
-[`docs/architecture/FOUNDATION.md`](docs/architecture/FOUNDATION.md).
+SCOPE is a local research prototype that helps researchers inspect whether
+selected literature passages support, contradict, qualify, or do not establish
+claims in a draft. Its heuristic labels support human review; they do not
+establish scientific truth or calibrated probabilities.
 
 ## Current implementation
 
-The foundation currently provides:
+Stage A integrates the following Python components:
 
-- Installable Python package metadata and typed shared contracts.
-- Contract validation tests.
-- `GET /api/health` in FastAPI.
-- Interface stubs for ingestion, claim extraction, retrieval, comparison, and
-  pipeline orchestration.
-- API specifications and research/architecture documentation scaffolding.
+- TXT/Markdown ingestion with stable chunk IDs, exact text, offsets, and
+  section metadata. PDF parsing is optional through Docling; DOCX parsing
+  requires `python-docx`.
+- Offline atomic claim extraction with explicit unknown scope fields.
+- In-memory TF-IDF, BM25, and hybrid retrieval with selected-document filters.
+- Text-only and scope-aware rule comparators that preserve exact evidence
+  quotes and dimension explanations.
+- A pipeline for draft text or supplied claims, source selection, top-K
+  retrieval, mode choice, and canonical JSON serialization.
 
-Document parsing, claim extraction, evidence retrieval, scope comparison,
-corpus evaluation, persistence, and frontend behavior are not implemented.
-Research and literature documents are drafts and require source verification.
+Stage B adds a FastAPI backend for project creation, versioned document upload,
+parsing and evidence storage, real pipeline analysis, and persisted run/result
+history. SQLite is the local database. Upload supports PDF, DOCX, TXT,
+Markdown, and `.markdown`; TXT/Markdown parsing works without optional parser
+packages. The React/Vite frontend is now integrated and its live mode connects
+to these project, document, and analysis endpoints. Demo mode remains
+explicitly synthetic.
 
-## Installation and running
+The repository also contains a 30-paper literature review scaffold and a
+proposed research design. The bibliography has metadata/abstract checks and
+selective full-text appraisal; it is not an exhaustive systematic review.
+
+## Install and run the API
 
 Requires Python 3.11 or newer.
 
 ```sh
-python3.11 -m venv .venv
-source .venv/bin/activate
 python -m pip install -e '.[dev]'
-pytest
+python -m pip install 'scikit-learn>=1.4,<2'
 uvicorn api.main:app --reload
 ```
 
-The health endpoint is `http://127.0.0.1:8000/api/health`; FastAPI docs are at
-`http://127.0.0.1:8000/docs`. Optional dependency groups are available for
-ingestion, retrieval experiments, and database adapters. The foundation does
-not require paid APIs, cloud services, PostgreSQL, Pinecone, or external
-credentials.
+The API defaults to SQLite at `data/scope.db` and uploads at `data/uploads/`.
+OpenAPI is at `http://127.0.0.1:8000/api/openapi.json`, Swagger UI at
+`http://127.0.0.1:8000/api/docs`, and health at `/api/health`.
 
-## Evaluation status
+Configure `SCOPE_DATABASE_URL`, `SCOPE_STORAGE_DIR`,
+`SCOPE_MAX_UPLOAD_BYTES`, `SCOPE_CORS_ORIGINS`, and `SCOPE_MODE` as needed.
+Install `.[ingestion]` for PDF support and `python-docx` separately for DOCX.
+Gemini and dense retrieval are optional and not required for local analysis.
 
-No scientific benchmark or model evaluation has been run. The current tests
-validate data contracts and the health route; they are software checks, not
-evidence for the research hypothesis. Benchmark data must include provenance,
-license, annotation schema, and version before results are reported.
+## Run the frontend
 
-## Limitations and future work
+In a second terminal, start the Vite app and choose live API mode:
 
-The product pipeline is not implemented, the API has no authentication or
-multi-user isolation, and no persistence layer is configured. Next workstreams
-will implement ingestion, claim extraction, retrieval, alignment, evaluation,
-backend, frontend, and verified literature research behind the shared
-contracts.
+```sh
+cd web
+npm ci
+VITE_API_MODE=live npm run dev
+```
 
-## References
+Vite proxies `/api` to `http://127.0.0.1:8000`. The frontend can create
+projects, upload supported documents into the selected project, and submit
+draft analysis. Review notes and decisions are session-only because the API
+does not yet persist review state. To launch with sample data, omit
+`VITE_API_MODE=live`.
 
-Bibliographic details and source claims must be checked against primary sources
-before academic submission. No literature citations are asserted in this
-README.
+## API workflow
+
+Create a project, upload a source, and analyze draft text against selected
+documents:
+
+```sh
+curl -H 'Content-Type: application/json' \
+  -d '{"name":"Literature review"}' \
+  http://127.0.0.1:8000/api/projects
+
+curl -F project_id=PROJECT_ID -F file=@paper.md \
+  http://127.0.0.1:8000/api/documents
+
+curl -H 'Content-Type: application/json' \
+  -d '{"draft_text":"The intervention improves the outcome.","selected_document_ids":["DOCUMENT_ID"]}' \
+  http://127.0.0.1:8000/api/analyze
+```
+
+`POST /api/documents` parses and stores evidence chunks before reporting
+`ready`. `POST /api/analyze` extracts claims, retrieves only selected source
+documents, runs the scope-aware comparator, and stores comparisons with exact
+quotes. Mixed-project corpus selections are rejected. Project, document,
+analysis-run, and stored-result read endpoints are documented in
+[`docs/API.md`](docs/API.md).
+
+## Runnable end-to-end API demonstration
+
+```sh
+python scripts/run_backend_demo.py
+```
+
+This executes real project, upload, parse, analyze, and stored-result requests
+against a temporary SQLite database using the integrated algorithms. It uses
+the clearly labeled synthetic development passage in
+`data/samples/development_demo.md`; it is not scientific evidence. Actual
+request and response bodies are saved in
+`data/outputs/backend_demo.json`.
+
+The lower-level pipeline demonstration is `python scripts/run_demo.py`.
+Synthetic comparator and retrieval development checks run with
+`python scripts/run_development_checks.py`; their generated metrics are not
+scientific benchmark results.
+
+## Tests and evaluation status
+
+Run the complete software suite with:
+
+```sh
+python -m pytest -q
+```
+
+Tests cover contracts, ingestion, extraction, retrieval, alignment, evaluation,
+the unified pipeline, and end-to-end API workflows on temporary SQLite
+databases. Synthetic fixtures validate software behavior only. Authentic
+scientific benchmark evaluation remains pending because there is no
+licensed, human-reviewed SCOPE claim–evidence set.
+
+## Literature and methodology
+
+- [30-paper review matrix](docs/literature/review_matrix.csv)
+- [Critical synthesis](docs/literature/critical_synthesis.md)
+- [Prior-art comparison](docs/literature/prior_art_comparison.md)
+- [Proposed research design](docs/methodology/research_design.md)
+- [Report outline and readiness notes](docs/report/report_outline.md)
+
+These materials identify substantial overlap with prior scientific claim
+verification. They frame scope-aware comparison as a hypothesis to test, not a
+novelty or performance finding. Students should read the full papers, verify
+interpretations, and write their own final academic analysis.
+
+## Limitations
+
+The extractor, retriever, and comparator are English lexical/rule-based
+heuristics; confidence values are not calibrated. Real PDF parsing quality,
+OCR, and page-coordinate provenance have not been verified. Corpus evaluation
+has no connected benchmark adapter. The backend is synchronous and has no
+authentication, authorization, multi-user isolation, or schema migration
+runner; keep it local and single-user. Frontend checks are `cd web && npm run
+typecheck && npm test && npm run build`.

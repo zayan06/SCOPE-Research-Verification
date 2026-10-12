@@ -1,0 +1,3 @@
+The assay measured 3.2 mg/L at 22 °C. This value is approximate.
+
+The control group showed no statistically significant increase (p = 0.08).

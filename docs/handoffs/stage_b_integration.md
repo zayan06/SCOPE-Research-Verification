@@ -158,8 +158,9 @@ single-user security limitation visible and do not imply backend authorization.
 - This is a single-user local prototype with no authentication or
   authorization. Project-level checks prevent mixed-project analysis, but IDs
   are not security credentials.
-- The React frontend remains unmerged. Corpus benchmark execution remains
-  unavailable until a validated adapter is implemented.
+- The React frontend is integrated on `integrate/scope`; review annotations remain
+  session-only. Corpus benchmark execution remains unavailable until a validated
+  adapter is implemented.
 
 ## Latest Stage B commit
 

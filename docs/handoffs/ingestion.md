@@ -4,7 +4,7 @@
 
 - Workstream: scientific document ingestion and evidence chunking
 - Branch: `feat/ingestion`
-- Implementation commit: to be recorded after the code-and-test commit
+- Implementation commit: `96c483adc0ebb539624c67db39344f280532d1f1`
 
 ## Implemented features
 
@@ -119,4 +119,4 @@ print(chunks_to_json(chunks))
 
 ## Commit hash
 
-The code-and-test commit hash will be added before this handoff is finalized.
+Implementation commit: `96c483adc0ebb539624c67db39344f280532d1f1`.

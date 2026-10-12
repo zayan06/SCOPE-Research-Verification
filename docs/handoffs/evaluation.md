@@ -4,7 +4,7 @@
 
 - Workstream: Agent 5, machine-learning evaluation and experimental research
 - Branch: `feat/evaluation`
-- Implementation commit: to be recorded immediately after implementation commit
+- Implementation/test commit: `7ac6a16c0e74f3ef802e68878f63b47e1bcd6c5e`
 
 ## Files changed
 
@@ -81,14 +81,15 @@ Executed with the bundled Python 3.12 runtime:
 
 ```text
 python -m pytest -q
-15 passed, 1 warning
+16 passed, 1 warning
 ```
 
 The warning is the pre-existing Starlette deprecation warning about its
 `httpx` test-client integration. Evaluation tests cover hand-calculated
 accuracy, precision, recall, F1, macro-F1, confusion matrix, Recall@K, MRR,
 empty datasets, invalid labels, duplicate IDs, missing predictions, class
-imbalance, retrieval misses, and artifact serialization.
+imbalance, retrieval misses, artifact serialization, and a deterministic
+synthetic TF-IDF/BM25 smoke run.
 
 ## Integration instructions and limitations
 

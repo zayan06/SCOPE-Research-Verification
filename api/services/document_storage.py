@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from api.database.models import Document, DocumentVersion
 
-SUPPORTED_EXTENSIONS = {".pdf", ".docx"}
+SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt", ".md", ".markdown"}
 DEFAULT_MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
 

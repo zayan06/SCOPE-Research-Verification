@@ -4,93 +4,131 @@
 
 SCOPE is a local research prototype that helps researchers inspect whether
 selected literature passages support, contradict, qualify, or do not establish
-claims in a draft. Its rule-based labels are review aids, not scientific truth
-judgments or calibrated probabilities.
+claims in a draft. Its heuristic labels support human review; they do not
+establish scientific truth or calibrated probabilities.
 
-## Implemented in the core prototype
+## Current implementation
 
-- TXT/Markdown ingestion with stable evidence IDs, canonical character offsets,
-  section metadata, and exact source text. PDF uses optional Docling; DOCX uses
-  optional `python-docx`.
-- Offline atomic claim extraction with explicit unknown scope fields and exact
-  source spans. A Gemini adapter is optional and is not needed locally.
-- In-memory TF-IDF, BM25, and reciprocal-rank-fusion retrieval, with selected
-  document filtering and verbatim source chunks. Dense retrieval is optional.
-- Text-only and scope-aware claim–evidence comparison, including dimension
-  explanations and exact evidence quotes.
-- A unified pipeline for draft-text or direct-claim input, selected source
-  documents, top-K results, comparator mode selection, and JSON serialization.
-- Classification and retrieval metrics plus scripts for synthetic development
-  checks.
+Stage A integrates the following Python components:
 
-## Architecture
+- TXT/Markdown ingestion with stable chunk IDs, exact text, offsets, and
+  section metadata. PDF parsing is optional through Docling; DOCX parsing
+  requires `python-docx`.
+- Offline atomic claim extraction with explicit unknown scope fields.
+- In-memory TF-IDF, BM25, and hybrid retrieval with selected-document filters.
+- Text-only and scope-aware rule comparators that preserve exact evidence
+  quotes and dimension explanations.
+- A pipeline for draft text or supplied claims, source selection, top-K
+  retrieval, mode choice, and canonical JSON serialization.
 
-`src/scopecheck/contracts.py` contains the shared Pydantic contracts.
-`pipeline.py` connects ingestion → claim extraction → retrieval → alignment.
-Each evidence hit preserves its document ID and source chunk. The draft is
-processed separately and is excluded from the supporting corpus. Retrieval
-uses an explicit allow-list of selected source document IDs.
+Stage B adds a FastAPI backend for project creation, versioned document upload,
+parsing and evidence storage, real pipeline analysis, and persisted run/result
+history. SQLite is the local database. Upload supports PDF, DOCX, TXT,
+Markdown, and `.markdown`; TXT/Markdown parsing works without optional parser
+packages. The React frontend is still a separate workstream and has not been
+merged.
 
-## Install
+The repository also contains a 30-paper literature review scaffold and a
+proposed research design. The bibliography has metadata/abstract checks and
+selective full-text appraisal; it is not an exhaustive systematic review.
 
-Requires Python 3.11 or newer. Install the local package, development tools,
-and scikit-learn for the TF-IDF baseline:
+## Install and run the API
+
+Requires Python 3.11 or newer.
 
 ```sh
-python -m pip install -e '.[dev]'
+python -m pip install -e '.[dev,database]'
 python -m pip install 'scikit-learn>=1.4,<2'
+uvicorn api.main:app --reload
 ```
 
-Optional adapters: install `.[ingestion]` for PDF parsing; install
-`python-docx` separately for DOCX; install the declared `retrieval` extra only
-when using the dense Sentence Transformers adapter (it also includes
-scikit-learn). No paid service or credentials are required for the local
-baseline.
+The API defaults to SQLite at `data/scope.db` and uploads at `data/uploads/`.
+OpenAPI is at `http://127.0.0.1:8000/api/openapi.json`, Swagger UI at
+`http://127.0.0.1:8000/api/docs`, and health at `/api/health`.
 
-## Run the demonstration
+Configure `SCOPE_DATABASE_URL`, `SCOPE_STORAGE_DIR`,
+`SCOPE_MAX_UPLOAD_BYTES`, `SCOPE_CORS_ORIGINS`, and `SCOPE_MODE` as needed.
+Install `.[ingestion]` for PDF support and `python-docx` separately for DOCX.
+Gemini and dense retrieval are optional and not required for local analysis.
+
+## API workflow
+
+Create a project, upload a source, and analyze draft text against selected
+documents:
 
 ```sh
-python scripts/run_demo.py
+curl -H 'Content-Type: application/json' \
+  -d '{"name":"Literature review"}' \
+  http://127.0.0.1:8000/api/projects
+
+curl -F project_id=PROJECT_ID -F file=@paper.md \
+  http://127.0.0.1:8000/api/documents
+
+curl -H 'Content-Type: application/json' \
+  -d '{"draft_text":"The intervention improves the outcome.","selected_document_ids":["DOCUMENT_ID"]}' \
+  http://127.0.0.1:8000/api/analyze
 ```
 
-This parses `data/samples/development_demo.md`, accepts the documented draft
-claim, retrieves passages, and runs both comparator modes. The source text is
-explicitly synthetic and is not a finding or benchmark example. Structured
-output is written to `data/outputs/development_demo.json`.
+`POST /api/documents` parses and stores evidence chunks before reporting
+`ready`. `POST /api/analyze` extracts claims, retrieves only selected source
+documents, runs the scope-aware comparator, and stores comparisons with exact
+quotes. Mixed-project corpus selections are rejected. Project, document,
+analysis-run, and stored-result read endpoints are documented in
+[`docs/API.md`](docs/API.md).
 
-## Run tests and development evaluations
+## Runnable end-to-end API demonstration
+
+```sh
+python scripts/run_backend_demo.py
+```
+
+This executes real project, upload, parse, analyze, and stored-result requests
+against a temporary SQLite database using the integrated algorithms. It uses
+the clearly labeled synthetic development passage in
+`data/samples/development_demo.md`; it is not scientific evidence. Actual
+request and response bodies are saved in
+`data/outputs/backend_demo.json`.
+
+The lower-level pipeline demonstration is `python scripts/run_demo.py`.
+Synthetic comparator and retrieval development checks run with
+`python scripts/run_development_checks.py`; their generated metrics are not
+scientific benchmark results.
+
+## Tests and evaluation status
+
+Run the complete software suite with:
 
 ```sh
 python -m pytest -q
-python scripts/run_development_checks.py
 ```
 
-The development-check script uses the six fabricated rows in
-`data/benchmarks/development_fixtures.jsonl`. It evaluates both comparator
-modes on the same claim–evidence pairs and evaluates TF-IDF and BM25 on the
-same retrieval queries and judgments. Results are written to
-`data/outputs/development_checks.json` and labeled synthetic development
-checks. They are not scientific benchmark results.
+Tests cover contracts, ingestion, extraction, retrieval, alignment, evaluation,
+the unified pipeline, and end-to-end API workflows on temporary SQLite
+databases. Synthetic fixtures validate software behavior only. Authentic
+scientific benchmark evaluation remains pending because there is no
+licensed, human-reviewed SCOPE claim–evidence set.
 
-## Current limitations
+## Literature and methodology
 
-- Extraction, retrieval, and comparison use English lexical rules and have not
-  been scientifically validated. Scope matching can miss aliases, paraphrases,
-  and nuanced experimental context.
-- Confidence values are heuristic, not calibrated. Retrieval scores are not
-  probabilities. Human review against the original source remains necessary.
-- Real PDF parsing, OCR, page-coordinate provenance, and representative DOCX
-  behavior have not been verified here.
-- There is no licensed, human-reviewed SCOPE benchmark or authentic scientific
-  evaluation result. Benchmark evaluation remains pending.
-- The full React/FastAPI application, persistence, authentication, and
-  multi-user isolation are not part of this Stage A integration.
+- [30-paper review matrix](docs/literature/review_matrix.csv)
+- [Critical synthesis](docs/literature/critical_synthesis.md)
+- [Prior-art comparison](docs/literature/prior_art_comparison.md)
+- [Proposed research design](docs/methodology/research_design.md)
+- [Report outline and readiness notes](docs/report/report_outline.md)
 
-## Planned application integration
+These materials identify substantial overlap with prior scientific claim
+verification. They frame scope-aware comparison as a hypothesis to test, not a
+novelty or performance finding. Students should read the full papers, verify
+interpretations, and write their own final academic analysis.
 
-Stage B can call `scopecheck.pipeline.analyze` with an `AnalyzeRequest` and a
-mapping from selected document IDs to local paths, then return its canonical
-`AnalyzeResponse`. It should preserve source IDs and quotes, enforce selected
-document access at its storage boundary, and keep the rule-based nature and
-known limitations visible to researchers. The API and UI remain separate
-workstreams and are not claimed complete here.
+## Limitations and frontend readiness
+
+The extractor, retriever, and comparator are English lexical/rule-based
+heuristics; confidence values are not calibrated. Real PDF parsing quality,
+OCR, and page-coordinate provenance have not been verified. Corpus evaluation
+has no connected benchmark adapter. The backend is synchronous and has no
+authentication, authorization, multi-user isolation, or schema migration
+runner; keep it local and single-user. Frontend integration can use the
+documented OpenAPI contract and the project/document/analyze/run-history
+endpoints, but must retain the single-user deployment boundary and show the
+heuristic and evidence-review status clearly.

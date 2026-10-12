@@ -2,99 +2,66 @@
 
 ## Data model
 
-`api/database/models.py` defines seven SQLAlchemy tables: projects own
-documents; documents own numbered document versions; versions own extracted
-evidence chunks and atomic claims; projects own analysis runs; runs own
-structured comparison results. Foreign keys use cascade deletion for document
-versions and run results, and indexes cover project chronology, version order,
-and run/result lookup. UUID strings are used for generated record IDs; canonical
-pipeline IDs are retained for claims and evidence chunks. JSON columns preserve
-scope, source spans, chunk metadata, corpus selection, and the full comparison
-contract. The schema uses portable SQLAlchemy types for SQLite and PostgreSQL.
-
-`api/database/session.py` reads `SCOPE_DATABASE_URL`, defaults to local SQLite,
-enables SQLite foreign keys, and provides request-scoped sessions. Tables are
-created at application startup for this prototype. Alembic migrations are not
-included; adopt migrations before evolving deployed data.
+`api/database/models.py` defines projects, documents, numbered document
+versions, evidence chunks, atomic claims, analysis runs, and comparison
+results. Foreign keys and indexes preserve project/version/run relationships.
+JSON columns retain scope, source spans, chunk metadata, corpus selection, and
+complete comparison contracts. SQLite is the local default; PostgreSQL support
+is designed but was not exercised. `create_all` initializes new databases;
+there is no schema migration runner.
 
 ## API structure
 
-`api/main.py` configures FastAPI, CORS, health, OpenAPI, and route registration.
-Route modules separate project, document, and analysis operations. Canonical
-scientific request/response DTOs remain in `scopecheck.contracts`; additional
-project/version/history responses live in `api/schemas.py`. The public
-specification and examples are in `docs/API.md`.
+`api/main.py` configures FastAPI, CORS, health, OpenAPI, routes, and the real
+`ScopePipelineAdapter`. Project, document, and analysis routes are separated
+under `api/routes/`. Canonical claim and comparison DTOs remain in
+`scopecheck.contracts`; project/version/history response DTOs live in
+`api/schemas.py`. The endpoint contract and request examples are in
+[`docs/API.md`](../API.md).
 
-## File storage
+## Upload and ingestion
 
-`api/services/document_storage.py` accepts only PDF and DOCX extensions, reads
-uploads in bounded chunks, enforces `SCOPE_MAX_UPLOAD_BYTES`, rejects empty
-files, and writes to a UUID-generated name under `SCOPE_STORAGE_DIR`. The
-original filename remains metadata. A SHA-256 checksum and numbered version
-record are committed with each upload. If database work fails, the just-written
-file is removed. Parsing stays behind the ingestion integration boundary;
-stored bytes report `uploaded`, while the document version remains `pending`.
+`api/services/document_storage.py` accepts PDF, DOCX, TXT, Markdown, and
+`.markdown` files; it applies the upload size limit, stores under a generated
+UUID filename, records a SHA-256 checksum, and never uses the submitted name as
+a storage path. `api/services/ingestion.py` parses each version immediately
+and persists its `EvidenceChunk` text, page/section, offsets, and metadata under
+that version. Successful uploads report `ready`; parse failures roll back the
+document/version and remove the just-written file. TXT/Markdown work offline;
+PDF needs Docling and DOCX needs `python-docx`.
 
-## Analysis orchestration and adapters
+## Analysis pipeline
 
-`api/services/analysis.py` owns the flow from selection validation through run
-creation, adapter invocation, and result persistence. `PipelineAdapter` accepts
-the canonical `AnalyzeRequest` plus ordered `(document_id, local_path)` pairs
-and returns `AnalyzeResponse`. The default `UnavailablePipelineAdapter` raises
-`PipelineUnavailable`. The API records the failed run and reports an explicit
-503; it does not produce synthetic scientific output. On success, claim/evidence
-records with a matching uploaded document are stored with their source version,
-and each comparison is stored as structured JSON with its relation, confidence,
-IDs, and explanation.
+`api/services/analysis.py` validates the selected corpus, creates an analysis
+run, invokes the adapter, and persists returned comparisons. The default
+`ScopePipelineAdapter` calls `scopecheck.pipeline.analyze` with the selected
+document ID/path mapping. That pipeline extracts draft claims, builds the local
+TF-IDF index, retrieves only selected-document evidence, and applies the
+scope-aware comparator. Draft text is not indexed as evidence. Mixed-project
+selection is rejected. The API preserves document/chunk IDs, filename,
+offsets, exact quotations, and comparison dimensions while omitting internal
+storage paths from responses.
 
-Agent 9 should provide an adapter implementing:
+Analysis is synchronous. Tests can inject a fake adapter to isolate route
+behavior, but the application default performs real local analysis. Corpus
+benchmark execution remains unavailable until a validated evaluation adapter
+is supplied.
 
-```python
-class ScopePipelineAdapter:
-    algorithm_version: str
+## Run state, failure handling, and security
 
-    def analyze(self, request: AnalyzeRequest,
-                document_paths: list[tuple[str, str]]) -> AnalyzeResponse: ...
-```
+Document versions report `ready` or `failed`; analysis runs report
+`processing`, `completed`, or `failed`. Domain errors use stable codes and
+messages. The current service is a single-user local prototype with no
+authentication or authorization. Project membership constrains each analysis
+corpus, but project IDs are not user credentials. Do not expose this backend as
+a multi-user service without principal-based record authorization, private
+storage, upload controls, managed secrets, and reviewed deployment settings.
 
-Set `app.state.pipeline_adapter` to an instance during app assembly. The
-adapter should map the selected stored files to integrated parser/retrieval
-inputs, preserve canonical source IDs and exact quotes, and return the shared
-Pydantic response. For corpus work, add `analyze_corpus(benchmark_id,
-document_ids)` returning `AnalyzeCorpusResponse`; the backend checks for this
-optional method and currently reports unavailable when absent. Do not import
-the scientific modules into route code.
+## Local execution
 
-## Processing and failures
-
-Document versions and analysis runs store `pending`, `processing`, `completed`,
-or `failed`; runs also store completion time and a sanitized failure reason.
-Uploads remain pending for ingestion. Run status and results have read routes.
-The current analysis request executes synchronously. A future worker should
-claim a committed pending run, update it to processing, commit durable results,
-and write failure time/reason on errors. FastAPI in-process background tasks
-would not provide durable queue semantics; use a database-backed job claim or
-proper queue when work becomes asynchronous.
-
-Domain errors use a stable `code` and `message`; validation errors retain
-FastAPI's standard 422 response. Raw filesystem paths, credentials, and full
-source documents are not returned.
-
-## Security limits
-
-The local API has no login, user ownership, or tenant isolation. Project IDs
-are not authorization. CORS defaults to local frontend origins and can be
-configured with `SCOPE_CORS_ORIGINS`; no secret is hardcoded. Treat the service
-as a single-user local prototype. Production requires authentication and
-per-record authorization, private storage, managed secrets, and reviewed upload
-controls.
-
-## Local execution and PostgreSQL
-
-Install with `python -m pip install -e '.[dev,database]'`, then run
-`uvicorn api.main:app --reload`. SQLite data is stored at `data/scope.db`, and
-uploads under `data/uploads/`. Set `SCOPE_DATABASE_URL` to a PostgreSQL SQLAlchemy
-URL and configure a private `SCOPE_STORAGE_DIR` to select those adapters. The
-schema avoids SQLite-only types, but PostgreSQL operation has not been tested in
-this local workstream. Add Alembic migrations and integration checks as part of
-deployment preparation.
+Install with `python -m pip install -e '.[dev,database]'`, then install
+`scikit-learn>=1.4,<2` for TF-IDF retrieval. Run `uvicorn api.main:app --reload`.
+SQLite data defaults to `data/scope.db`; uploads default to
+`data/uploads/`. Configure `SCOPE_DATABASE_URL`, `SCOPE_STORAGE_DIR`,
+`SCOPE_MAX_UPLOAD_BYTES`, `SCOPE_CORS_ORIGINS`, and `SCOPE_MODE` as needed.
+Adopt Alembic migrations before evolving a deployed database.

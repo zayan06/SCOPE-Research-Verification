@@ -9,6 +9,7 @@ from uuid import uuid4
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from scopecheck.pipeline import analyze as run_pipeline
 from scopecheck.contracts import AnalyzeRequest, AnalyzeResponse, ClaimAnalysis
 from api.database.models import (
     AnalysisRun, AtomicClaimRecord, ComparisonResultRecord, Document,
@@ -34,7 +35,27 @@ class UnavailablePipelineAdapter:
         raise PipelineUnavailable("The integrated SCOPE research pipeline is not installed.")
 
 
+class ScopePipelineAdapter:
+    """Adapter that runs the integrated local ingestion/retrieval/comparison pipeline."""
+
+    algorithm_version = "scope-rules/0.1.0+tfidf"
+
+    def analyze(self, request: AnalyzeRequest, document_paths: list[tuple[str, str]]) -> AnalyzeResponse:
+        sources = dict(document_paths)
+        if len(sources) != len(document_paths):
+            raise ValueError("Selected document IDs must be unique.")
+        response = run_pipeline(request, sources)
+        # Parser metadata can contain the internal upload path. The document ID,
+        # filename, offsets, chunk ID, and exact quote are sufficient provenance.
+        for analysis in response.analyses:
+            for hit in analysis.retrieval_hits:
+                hit.chunk.metadata.pop("source_path", None)
+        return response
+
+
 def create_run(session: Session, request: AnalyzeRequest, adapter: PipelineAdapter) -> tuple[AnalysisRun, AnalyzeResponse]:
+    if len(request.selected_document_ids) != len(set(request.selected_document_ids)):
+        raise ValueError("Selected document IDs must be unique.")
     documents = session.scalars(
         select(Document).where(Document.id.in_(request.selected_document_ids))
     ).all()
@@ -60,9 +81,29 @@ def create_run(session: Session, request: AnalyzeRequest, adapter: PipelineAdapt
         )
         if latest is None:
             raise ValueError(f"Document {document_id} has no uploaded version.")
+        if latest.processing_status != "ready":
+            raise ValueError(f"Document {document_id} is not ready for analysis.")
         versions.append((document_id, latest.storage_path))
     try:
         response = adapter.analyze(request, versions)
+        selected_ids = set(by_id)
+        for analysis in response.analyses:
+            hit_by_id = {}
+            for hit in analysis.retrieval_hits:
+                if hit.chunk.document_id not in selected_ids:
+                    raise RuntimeError("Pipeline returned evidence outside the selected project corpus.")
+                hit_by_id[hit.chunk.id] = hit
+                hit.chunk.metadata.pop("source_path", None)
+                hit.chunk.metadata["source_filename"] = by_id[hit.chunk.document_id].source_filename
+                doc_metadata = hit.chunk.metadata.get("document_metadata")
+                if isinstance(doc_metadata, dict):
+                    doc_metadata["filename"] = by_id[hit.chunk.document_id].source_filename
+            for comparison in analysis.comparisons:
+                hit = hit_by_id.get(comparison.evidence_chunk_id)
+                if comparison.claim_id != analysis.claim.id or hit is None:
+                    raise RuntimeError("Pipeline returned a comparison without its selected claim/evidence pair.")
+                if comparison.evidence_quote not in hit.chunk.text:
+                    raise RuntimeError("Pipeline returned an evidence quote absent from its source passage.")
         for analysis in response.analyses:
             persist_claim_analysis(session, run, analysis)
         run.status = "completed"
@@ -96,11 +137,15 @@ def persist_claim_analysis(session: Session, run: AnalysisRun, analysis: ClaimAn
     for hit in analysis.retrieval_hits:
         chunk = hit.chunk
         chunk_version = latest_version(session, chunk.document_id)
-        if chunk_version is not None and session.get(EvidenceChunkRecord, chunk.id) is None:
+        record_id = f"{chunk_version.id}:{chunk.id}" if chunk_version is not None else chunk.id
+        if chunk_version is not None and session.get(EvidenceChunkRecord, record_id) is None:
+            metadata = dict(chunk.metadata)
+            metadata.pop("source_path", None)
+            metadata["canonical_chunk_id"] = chunk.id
             session.add(EvidenceChunkRecord(
-                id=chunk.id, document_version_id=chunk_version.id, text=chunk.text,
+                id=record_id, document_version_id=chunk_version.id, text=chunk.text,
                 section=chunk.section_name, page=chunk.page_number, start_offset=chunk.start_offset,
-                end_offset=chunk.end_offset, metadata_json=chunk.metadata,
+                end_offset=chunk.end_offset, metadata_json=metadata,
             ))
     for comparison in analysis.comparisons:
         session.add(ComparisonResultRecord(

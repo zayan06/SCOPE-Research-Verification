@@ -2,7 +2,7 @@
 
 ## Status and purpose
 
-This is a proposed design for student review. It is not an implemented method or a validated result. The repository currently has typed contracts and interface stubs; the core parser, claim extractor, retriever, comparator, evaluation, and end-to-end pipeline are not implemented ([architecture foundation](../architecture/FOUNDATION.md); [handoff](../handoffs/architecture-foundation.md)). SCOPE is researcher decision support and must not be described as determining objective scientific truth.
+This is a proposed study design for student review, not a validated research method or result. The repository now contains an implemented local prototype: document parsing, deterministic claim extraction, TF-IDF/BM25 retrieval, text-only and scope-aware rule comparators, a unified Python pipeline, and a persistent FastAPI workflow. These components have software tests and synthetic development checks, but no authentic scientific benchmark or researcher study has validated the hypotheses below. Historical foundation status is recorded in the [architecture handoff](../handoffs/architecture-foundation.md); current application behavior is described in the [Stage B handoff](../handoffs/stage_b_integration.md). SCOPE is researcher decision support and must not be described as determining objective scientific truth.
 
 The closest established work includes SciFact, SciFact-Open, and MultiVerS, which already combine scientific claim verification with retrieved evidence, rationale selection, and document context [R02–R04]. Evidence Inference structures clinical comparisons around interventions, comparators, outcomes, and cited evidence [R07]. The research question here is narrower: whether making multiple scope comparisons explicit improves a reviewer's ability to distinguish support, contradiction, qualification, scope mismatch, insufficient evidence, and irrelevance.
 
@@ -139,7 +139,7 @@ Report sample counts and confidence intervals where feasible. Do not invent scor
 - **Model behavior:** Text similarity, NLI, and language-model scores can be overconfident and sensitive to wording; calibration must be measured on held-out data.
 - **Scope schema:** The current contract uses string values and lists, not a normalized ontology of units, thresholds, or sample definitions. Any richer schema requires coordinated contract revision.
 - **Generalization:** Results from one discipline or corpus do not imply utility across scientific fields.
-- **System status:** Ingestion, extraction, retrieval, comparison, and experiments are not implemented yet. This design must be revised to match actual code and available data.
+- **System status:** Ingestion, extraction, retrieval, comparison, local API persistence, and synthetic development checks are implemented. Real scientific benchmark evaluation, human-reviewed labels, calibration, ablations, and researcher studies remain pending. The implemented rule-based prototype must not be confused with the proposed calibrated predictor or with validated research findings.
 
 ## Unresolved design decisions
 
@@ -154,7 +154,7 @@ Report sample counts and confidence intervals where feasible. Do not invent scor
 
 ## Code artifacts required before reporting results
 
-Current interfaces are documented in the repository contract/handoff. Needed artifacts include: parser with source offsets; deterministic claim extraction baseline; BM25/TF-IDF index; comparator with explicit unknown values and dimension-level explanations; pipeline wiring; versioned sample/benchmark manifests; annotation guide and adjudicated labels; evaluation script with fixed splits and metrics; reproducible run configuration; error-analysis outputs. These artifacts are proposals; none should be described as present until merged and verified.
+Implemented software artifacts include the parser and source offsets, deterministic extraction baseline, BM25/TF-IDF index, text-only and scope-aware comparators, pipeline, local API persistence, and reproducible synthetic development scripts. Still needed before scientific findings can be reported: licensed/versioned scientific benchmark data, annotation guide and adjudicated labels, fixed source-level splits, uncertainty analysis, and error analysis on authentic reviewed examples. See the [development-check outputs](../../data/outputs/development_checks.json); they are explicitly synthetic software checks only.
 
 
 ## RQ-to-measurement plan

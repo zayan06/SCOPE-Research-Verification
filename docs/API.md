@@ -9,6 +9,7 @@ backend additions. OpenAPI is served at `/api/openapi.json`, Swagger UI at
 
 ```sh
 python -m pip install -e '.[dev,database]'
+python -m pip install 'scikit-learn>=1.4,<2'
 uvicorn api.main:app --reload
 ```
 
@@ -47,25 +48,28 @@ All return the project fields `id`, `name`, `description`, `created_at`, and
 
 `POST /api/documents` accepts `multipart/form-data`: required `file` and
 `project_id`; optional `title` and `document_id`. Omit `document_id` to create a
-document; supply it to append a version. PDF and DOCX are accepted. Uploads are
+document; supply it to append a version. PDF, DOCX, TXT, Markdown, and
+`.markdown` files are accepted. TXT/Markdown parsing is built in; PDF requires
+the optional Docling dependency, and DOCX requires `python-docx`. Uploads are
 size limited, empty uploads are rejected, and the original filename is never
 used as a storage path. Each version records a SHA-256 checksum.
 
 ```sh
-curl -F project_id=PROJECT_ID -F file=@paper.pdf http://127.0.0.1:8000/api/documents
+curl -F project_id=PROJECT_ID -F file=@paper.md http://127.0.0.1:8000/api/documents
 ```
 
 Success returns `201 DocumentUploadResponse`, for example:
 
 ```json
-{"document_id":"UUID","filename":"paper.pdf","status":"uploaded","message":"Stored version 1; document parsing is pending integration."}
+{"document_id":"UUID","filename":"paper.md","status":"ready","message":"Parsed version 1 into 8 evidence chunks."}
 ```
 
-`uploaded` means the bytes and metadata are stored. It does not mean parsing
-succeeded. The version's processing state remains `pending` until an ingestion
-adapter updates it.
+Successful upload parses the stored version and persists source-addressable
+evidence chunks before returning `ready`. Parse failures do not register a
+ready document. A missing optional parser returns `503 parser_unavailable`;
+malformed content returns `422 document_parse_failed`.
 
-`GET /api/documents?project_id=UUID&status=uploaded&limit=50` lists documents
+`GET /api/documents?project_id=UUID&status=ready&limit=50` lists documents
 newest first (`limit` 1–200). `GET /api/documents/{document_id}` includes all
 versions. `GET /api/documents/{document_id}/status` returns the latest version
 state and failure reason. Invalid type is `415`, empty file is `400`, size limit
@@ -73,23 +77,35 @@ is `413`, and missing project/document is `404`.
 
 ## Analysis
 
-`POST /api/analyze` accepts the canonical `AnalyzeRequest`:
+`POST /api/analyze` accepts the canonical `AnalyzeRequest` and runs the local
+claim extractor, selected-document TF-IDF retrieval, and scope-aware
+comparator:
 
 ```json
 {"draft_text":"The intervention improves the outcome.","selected_document_ids":["DOCUMENT_UUID"]}
 ```
 
-The selected documents must exist, have uploaded versions, and belong to one
-project. A connected adapter returns canonical `AnalyzeResponse`; comparisons
-are stored with exact evidence quotes and structured comparison JSON. The
-current default adapter is deliberately unavailable, so this route returns
-`503 pipeline_unavailable` and persists a failed run rather than inventing
-claims or predictions. The error includes `analysis_run_id` for status lookup.
+The selected documents must exist, have ready versions, and belong to one
+project. The live adapter returns canonical `AnalyzeResponse`; comparisons are
+stored with exact evidence quotes and structured comparison JSON. The uploaded
+draft is extracted separately and is never indexed as supporting literature.
+The request may select only documents from one project; mixed-project
+selections are rejected. Analysis is synchronous and local.
+
+```sh
+curl -H 'Content-Type: application/json' \
+  -d '{"draft_text":"The treatment improves the outcome.","selected_document_ids":["DOCUMENT_UUID"]}' \
+  http://127.0.0.1:8000/api/analyze
+```
+
+The response contains extracted claims, ranked hits with source IDs and exact
+text, and scope-aware comparisons. Empty retrieval is returned explicitly
+through empty hit/comparison arrays and an insufficient-evidence status.
 
 `POST /api/analyze-corpus` accepts the foundation `AnalyzeCorpusRequest`. It
-validates the corpus and persists a run. Corpus execution returns `503` until
-an adapter with `analyze_corpus(benchmark_id, document_ids)` is connected.
-There is no benchmark output or fabricated metric in this backend.
+validates the corpus and persists a run. Corpus execution still returns `503`
+until an evaluation adapter with `analyze_corpus(benchmark_id, document_ids)`
+is connected. There is no fabricated benchmark output or metric.
 
 `GET /api/analysis-runs/{run_id}` reads status and timestamps;
 `GET /api/analysis-runs/{run_id}/results` returns stored comparisons. Project

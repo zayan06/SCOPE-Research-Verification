@@ -1,6 +1,6 @@
 # Academic report outline and readiness guide
 
-This is a structure for student-authored writing. It is not a completed report. Replace prompts with students' own analysis and cite primary sources. The current codebase is a foundation with unimplemented core modules; the report must state that plainly unless later commits and experiments provide evidence.
+This is a structure for student-authored writing. It is not a completed report. Replace prompts with students' own analysis and cite primary sources. The current branch includes a working local analysis prototype and persistent FastAPI backend; it has not produced authentic scientific benchmark results or a validated research finding. Report only behavior present at the final reviewed commit, and distinguish software checks from scientific evaluation.
 
 ## 1. Problem statement
 
@@ -82,13 +82,13 @@ This is a structure for student-authored writing. It is not a completed report. 
 
 **Tables/figures:** Pipeline diagram; scope field schema; decision table for relation labels; worked example with unknown values.
 
-**Code artifacts:** Current contracts in `src/scopecheck/contracts.py`; eventual parser, extractor, retrieval index, comparator, and pipeline paths from actual commits.
+**Code artifacts:** Current contracts, parser, extractor, retrieval index, comparators, pipeline, API services, test suite, and exact integrated commit. Link the Stage B handoff and report the actual test/demo commands at report freeze.
 
-**Incomplete:** Most computational components are stubs. Update this section to match the code that exists at report freeze; never describe planned pseudocode as implemented.
+**Incomplete:** The parser, deterministic extractor, lexical retrieval baselines, rule-based comparators, pipeline, and local API are implemented. The trainable/calibrated predictor, human annotation protocol, authentic benchmark evaluation, ablations, and user study remain proposed or pending. Update this section to match the code and data at report freeze; label the current comparator as heuristic.
 
 ## 6. Code repository
 
-**Section argument:** The report must describe only code present at the exact submitted commit and separate working interfaces from stubs.
+**Section argument:** The report must describe only code present at the exact submitted commit and separate implemented software from research hypotheses and unvalidated behavior.
 
 **Research questions:** Enables reproducibility for all RQs; code presence alone answers none.
 

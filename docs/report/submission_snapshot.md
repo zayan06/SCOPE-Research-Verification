@@ -2,36 +2,44 @@
 
 - **Submission date:** Not yet submitted. Snapshot prepared 2026-10-12.
 - **Submitted commit:** Not identified. No submission tag has been created.
+- **Current development state:** Stage A scientific pipeline and Stage B local
+  FastAPI backend are integrated on `integrate/scope`; the frontend workstream
+  has not yet been merged.
 
 ## Implemented functionality
 
-- Python package metadata, shared Pydantic contracts, and validation tests.
-- FastAPI application with `GET /api/health`.
-- Interface stubs, API specification, and architecture documentation.
+- Shared scientific contracts and TXT/Markdown ingestion with source offsets;
+  optional Docling PDF and python-docx DOCX adapters.
+- Deterministic atomic claim extraction and explicit unknown scope fields.
+- TF-IDF/BM25/hybrid retrieval with document filtering.
+- Text-only and scope-aware rule-based comparisons with exact evidence quotes.
+- Local pipeline and FastAPI project/document/upload/analyze/run-history flow.
+- SQLite persistence for projects, versions, parsed evidence chunks, runs, and
+  structured comparison results.
+- Literature review scaffold with 30 unique source-checked publication
+  records, critical synthesis, prior-art comparison, and proposed research
+  design. Bibliographic/abstract verification is not exhaustive full-text
+  appraisal.
 
-## Partially implemented functionality
+## Validation and research status
 
-- Literature review, prior-art comparison, and research design drafts have been
-  committed on the dedicated `docs/literature` workstream. They are not yet in
-  the shared `main` base; source details and interpretations require researcher
-  verification before integration.
-- API contracts are documented; only the health endpoint is live.
-
-## Proposed functionality
-
-Scientific document ingestion, atomic claim extraction, evidence retrieval,
-scope-aware comparison, benchmark evaluation, persistence, and React frontend
-remain proposed or assigned for development.
-
-## Experiments
-
-- **Completed:** No scientific evaluation experiments. Contract and API tests
-  are software validation only.
-- **Pending:** Benchmark selection and provenance review, annotation protocol,
-  baseline evaluation, scope-dimension ablations, and error analysis.
+- Python tests are software checks; run the exact full suite at report freeze
+  and record the commit and actual count.
+- Synthetic fixture metrics in `data/outputs/development_checks.json` are
+  development checks only, not scientific evaluation.
+- **Completed:** local end-to-end software workflow and reproducible synthetic
+  checks.
+- **Pending:** licensed scientific benchmark acquisition, human-reviewed SCOPE
+  labels, source-grouped evaluation splits, ablations, calibration/abstention
+  analysis, error analysis on authentic examples, and researcher usability
+  study.
 
 ## Known limitations
 
-There is no end-to-end analysis pipeline, multi-user security, persistence, or
-validated scientific performance. The current repository must not be presented
-as having demonstrated the research hypothesis.
+The algorithms are English lexical/rule-based heuristics with no scientific
+validation. PDF parsing quality and real PDF provenance were not verified.
+The backend is synchronous and single-user, has no authentication or
+authorization, and has no schema migration runner. The React frontend is not
+integrated in this Stage B snapshot. This repository must not be presented as
+having demonstrated the research hypotheses or as determining scientific
+truth.

@@ -1,5 +1,7 @@
 """Document upload, version and status endpoints."""
 
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -9,6 +11,7 @@ from api.database.models import Document, DocumentVersion, Project
 from api.database.session import get_db
 from api.schemas import DocumentDetail, DocumentStatusResponse, DocumentVersionResponse
 from api.services.document_storage import UploadProblem, save_upload
+from api.services.ingestion import parse_and_store
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
 
@@ -30,18 +33,39 @@ async def upload_document(
 ) -> DocumentUploadResponse:
     if session.get(Project, project_id) is None:
         raise HTTPException(404, detail={"code": "project_not_found", "message": "Project not found."})
+    stored_path: Path | None = None
     try:
         document, version = await save_upload(session, project_id=project_id, upload=file, document_id=document_id, title=title)
+        stored_path = Path(version.storage_path)
+        chunk_count = parse_and_store(session, document, version)
         session.commit()
     except UploadProblem as exc:
         session.rollback()
         raise HTTPException(exc.status_code, detail={"code": exc.code, "message": str(exc)}) from exc
+    except RuntimeError as exc:
+        session.rollback()
+        if stored_path is not None:
+            stored_path.unlink(missing_ok=True)
+        raise HTTPException(503, detail={
+            "code": "parser_unavailable",
+            "message": "The parser required for this document type is unavailable.",
+        }) from exc
+    except (ValueError, OSError) as exc:
+        session.rollback()
+        if stored_path is not None:
+            stored_path.unlink(missing_ok=True)
+        raise HTTPException(422, detail={
+            "code": "document_parse_failed",
+            "message": "The uploaded document could not be parsed.",
+        }) from exc
     except Exception:
         session.rollback()
+        if stored_path is not None:
+            stored_path.unlink(missing_ok=True)
         raise
     return DocumentUploadResponse(
-        document_id=document.id, filename=document.source_filename, status="uploaded",
-        message=f"Stored version {version.version_number}; document parsing is pending integration.",
+        document_id=document.id, filename=document.source_filename, status="ready",
+        message=f"Parsed version {version.version_number} into {chunk_count} evidence chunks.",
     )
 
 

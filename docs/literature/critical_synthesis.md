@@ -4,7 +4,7 @@
 
 This is an evidence-grounded research note, not a finished student literature review. It synthesizes 30 publications whose bibliographic records were checked against publisher or proceedings records (primarily ACL Anthology and NeurIPS; see [the review matrix](review_matrix.csv) and [verified APA references](references_apa.md)). The records establish publication metadata and the summarized task/method claims. A full-text reading and student verification of these analytical interpretations remain necessary before submission.
 
-SCOPE is intended to help a researcher inspect whether retrieved passages align with a draft claim under stated conditions. It does not establish scientific truth or aggregate the whole literature into a clinical or scientific recommendation. The repository foundation is explicit that ingestion, extraction, retrieval, alignment, and evaluation are currently stubs ([repository foundation](../architecture/FOUNDATION.md); [architecture handoff](../handoffs/architecture-foundation.md)).
+SCOPE is intended to help a researcher inspect whether retrieved passages align with a draft claim under stated conditions. It does not establish scientific truth or aggregate the whole literature into a clinical or scientific recommendation. The current repository implements a local rule-based analysis prototype and persistent API workflow; software tests and synthetic checks do not establish scientific validity. Historical foundation status is retained in the [architecture handoff](../handoffs/architecture-foundation.md), while current behavior is summarized in the [Stage B handoff](../handoffs/stage_b_integration.md).
 
 ## Why semantic similarity alone is insufficient
 
@@ -86,7 +86,7 @@ No claim of novelty should be made until the students search more broadly, read 
 
 ## Synthesis conclusion for student drafting
 
-The defensible framing is: semantic and dense retrieval are useful for finding candidate passages, but retrieval relevance alone does not establish claim support; existing scientific verification already combines retrieval, rationale extraction, stance classification, context, and selected scope-related reasoning. SCOPE proposes to test whether exposing a set of scientific scope dimensions helps researchers inspect claim-evidence alignment in a local-first workflow. The project has not yet implemented or evaluated that proposal. Any claimed contribution, performance benefit, or remaining gap must be revised after full-text review, implementation, and experiments.
+The defensible framing is: semantic and dense retrieval are useful for finding candidate passages, but retrieval relevance alone does not establish claim support; existing scientific verification already combines retrieval, rationale extraction, stance classification, context, and selected scope-related reasoning. SCOPE has implemented a local rule-based prototype that exposes scope dimensions for inspection. Whether that approach improves classification or researcher decisions remains a hypothesis: no authentic scientific benchmark, adjudicated SCOPE labels, or user study has evaluated it. Any claimed contribution, performance benefit, or remaining gap must be revised after full-text review and experiments.
 
 ## Source checking
 

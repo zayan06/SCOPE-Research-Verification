@@ -113,18 +113,38 @@ function App() {
     let active = true;
     setLoading(true);
     setLiveError("");
-    Promise.all([api.health(), api.documents()]).then(([, remoteDocs]) => {
+    Promise.all([api.health(), api.projects()]).then(([, remoteProjects]) => {
+      if (!active) return;
+      const mapped = remoteProjects.map((project) => ({
+        id: project.id, name: project.name, description: project.description ?? "",
+        updated: new Date(project.updated_at).toLocaleDateString(), documents: 0, drafts: 0, analyses: 0,
+      }));
+      setProjects(mapped);
+      setProjectId((current) => mapped.some((item) => item.id === current) ? current : mapped[0]?.id ?? "");
+      if (!mapped.length) { setDocuments([]); setSelectedDocIds([]); setFindings([]); }
+    }).catch((error: unknown) => {
+      if (active) setLiveError(error instanceof ApiError ? error.message : "Could not load workspace data.");
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [mode]);
+
+  useEffect(() => {
+    if (mode !== "live" || !projectId || projects.every((project) => project.id !== projectId)) return;
+    let active = true;
+    setLoading(true);
+    api.documents(projectId).then((remoteDocs) => {
       if (!active) return;
       setDocuments(remoteDocs.map((doc) => ({
         ...doc, kind: "Source paper" as const, title: doc.filename, authors: null, year: null,
         uploadedAt: null, claims: 0,
       })));
       setSelectedDocIds(remoteDocs.map((doc) => doc.document_id));
+      setFindings([]);
     }).catch((error: unknown) => {
-      if (active) setLiveError(error instanceof ApiError ? error.message : "Could not load workspace data.");
+      if (active) setLiveError(error instanceof ApiError ? error.message : "Could not load project documents.");
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [mode]);
+  }, [mode, projectId, projects]);
 
   function navigate(next: Page) {
     setPage(next);
@@ -144,7 +164,8 @@ function App() {
   }
   function selectProject(id: string) {
     setProjectId(id);
-    if (mode === "demo") {
+    if (mode === "live") { setFindings([]); setSelectedDocIds([]); }
+    else {
       if (id === demoProjects[0].id) {
         setDocuments(demoDocuments);
         setFindings(demoFindings);
@@ -154,19 +175,28 @@ function App() {
       }
     }
   }
-  function addProject(event: FormEvent) {
+  async function addProject(event: FormEvent) {
     event.preventDefault();
     const name = draftProjectName.trim();
     if (!name) return;
-    if (mode === "live") { setLiveError("Project creation is not part of the current API contract. Switch to demo mode to try it."); return; }
+    if (mode === "live") {
+      setLiveError("");
+      try {
+        const created = await api.createProject(name);
+        const project: Project = { id: created.id, name: created.name, description: created.description ?? "", updated: new Date(created.updated_at).toLocaleDateString(), documents: 0, drafts: 0, analyses: 0 };
+        setProjects((items) => [project, ...items]); setProjectId(project.id); setDocuments([]); setSelectedDocIds([]); setFindings([]);
+        setDraftProjectName(""); setModal(null); notify("Project created.");
+      } catch (error) { setLiveError(error instanceof ApiError ? error.message : "Project could not be created."); }
+      return;
+    }
     const project: Project = { id: `project-${Date.now()}`, name, description: "New research workspace", updated: "Just now", documents: 0, drafts: 0, analyses: 0 };
     setProjects((items) => [project, ...items]); setProjectId(project.id); setDocuments([]); setFindings([]); setDraftProjectName(""); setModal(null);
     notify("Project created in this demo session.");
   }
   function validateFile(file: File): string {
-    const allowed = /\.(pdf|docx)$/i.test(file.name);
-    if (!allowed) return "Choose a PDF or DOCX file.";
-    if (file.size > 30 * 1024 * 1024) return "Files must be smaller than 30 MB.";
+    const allowed = /\.(pdf|docx|txt|md|markdown)$/i.test(file.name);
+    if (!allowed) return "Choose a PDF, DOCX, TXT, or Markdown file.";
+    if (file.size > 25 * 1024 * 1024) return "Files must be smaller than 25 MB.";
     return "";
   }
   function chooseFile(file?: File) {
@@ -185,7 +215,8 @@ function App() {
     setUploadMessage(""); setUploadBusy(true); setUploadProgress(0);
     if (mode === "live") {
       try {
-        const uploaded = await api.upload(uploadFile, setUploadProgress);
+        if (!projectId) throw new ApiError("Create or select a project before uploading documents.");
+        const uploaded = await api.upload(uploadFile, projectId, setUploadProgress);
         setDocuments((items) => [{ ...uploaded, title: uploaded.filename, kind: "Source paper", authors: null, year: null, uploadedAt: null, claims: 0 }, ...items]);
         setSelectedDocIds((items) => items.includes(uploaded.document_id) ? items : [...items, uploaded.document_id]);
         setUploadMessage(uploaded.message || "Upload complete. Processing status will update when the document is ready.");
@@ -291,15 +322,15 @@ function App() {
     {modal === "project" && <div className="modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setModal(null); }}><form className="modal" onSubmit={addProject} aria-labelledby="project-modal-title">
       <div className="modal-head"><div><span className="eyebrow">WORKSPACE</span><h2 id="project-modal-title">Create a project</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={() => setModal(null)}><Icon name="close" /></button></div>
       <label className="field-label" htmlFor="project-name">Project name</label><input autoFocus id="project-name" value={draftProjectName} onChange={(e) => setDraftProjectName(e.target.value)} placeholder="e.g. Nutrition intervention review" required maxLength={80} />
-      {mode === "live" && <p className="inline-note">Project creation is available in this demo session. The current API has no project endpoint.</p>}
+      {mode === "live" && <p className="inline-note">This project will be saved to the connected SCOPE backend.</p>}
       <div className="modal-actions"><button type="button" className="button secondary" onClick={() => setModal(null)}>Cancel</button><button className="button primary" type="submit">Create project</button></div>
     </form></div>}
     {modal === "upload" && <div className="modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget && !uploadBusy) setModal(null); }}><div className="modal upload-modal" role="dialog" aria-modal="true" aria-labelledby="upload-title">
       <div className="modal-head"><div><span className="eyebrow">DOCUMENT LIBRARY</span><h2 id="upload-title">Add a document</h2></div><button className="icon-button" aria-label="Close" onClick={() => setModal(null)} disabled={uploadBusy}><Icon name="close" /></button></div>
-      <p className="modal-copy">Upload a draft or source paper to this project. PDF and DOCX files up to 30 MB.</p>
-      <input ref={fileRef} type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={onFileChange} hidden />
+      <p className="modal-copy">Upload a source document to this project. PDF, DOCX, TXT, or Markdown files up to 25 MB.</p>
+      <input ref={fileRef} type="file" accept=".pdf,.docx,.txt,.md,.markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown" onChange={onFileChange} hidden />
       <div className={dragging ? "drop-zone dragging" : "drop-zone"} onDragOver={(e) => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={onDrop}>
-        <div className="drop-icon"><Icon name="upload" size={20} /></div><strong>Drag your file here</strong><span>or <button className="text-button" onClick={() => fileRef.current?.click()} type="button">browse files</button></span><small>PDF or DOCX · 30 MB max</small>
+        <div className="drop-icon"><Icon name="upload" size={20} /></div><strong>Drag your file here</strong><span>or <button className="text-button" onClick={() => fileRef.current?.click()} type="button">browse files</button></span><small>PDF, DOCX, TXT, or Markdown · 25 MB max</small>
       </div>
       {uploadFile && <div className="file-preview"><div className="file-type"><Icon name="file" /></div><div className="file-info"><strong>{uploadFile.name}</strong><span>{(uploadFile.size / 1024 / 1024).toFixed(1)} MB</span></div><button className="icon-button" aria-label="Remove file" onClick={() => { setUploadFile(null); setUploadProgress(0); }}><Icon name="close" size={16} /></button></div>}
       {uploadBusy && <div className="progress-wrap"><div className="progress-label"><span>{mode === "demo" ? "Simulating upload…" : "Uploading…"}</span><span>{uploadProgress}%</span></div><div className="progress-track"><span style={{ width: `${uploadProgress}%` }} /></div></div>}

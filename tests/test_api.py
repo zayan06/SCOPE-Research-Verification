@@ -103,7 +103,9 @@ def test_document_upload_status_and_safe_file_persistence(client: TestClient, tm
 
 def test_invalid_empty_and_oversized_document_uploads(client: TestClient) -> None:
     project_id = create_project(client)
-    assert upload(client, project_id, "notes.csv", b"text").status_code == 415
+    unsupported = upload(client, project_id, "notes.csv", b"text")
+    assert unsupported.status_code == 415
+    assert "TXT, and Markdown" in unsupported.json()["detail"]["message"]
     assert upload(client, project_id, "empty.md", b"").json()["detail"]["code"] == "empty_file"
     too_large = upload(client, project_id, "large.md", b"x" * 129)
     assert too_large.status_code == 413

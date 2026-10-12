@@ -109,6 +109,13 @@ export interface Project {
   drafts: number;
   analyses: number;
 }
+export interface ProjectResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
 export interface LibraryDocument extends DocumentSummary {
   kind: "Draft" | "Source paper";
   title: string;

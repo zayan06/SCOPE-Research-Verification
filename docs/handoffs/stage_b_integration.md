@@ -8,12 +8,14 @@ Integrated on `integrate/scope`:
 | --- | --- | --- |
 | `feat/backend` | `662db6763118518185bc8b86d469951a6ec33cd8` | `ced6a3614ac075276a2d6d5bef0374e70ba292ef` |
 | `docs/literature` | `8ab38d76c36e3d494cd65293bdf18fa1c437fcc6` | `4d0f71eb72bd40eb9c6dd26b7a7d05d103e64b17` |
+| `feat/frontend` | `711eddeefbc89c103acd7af42220168a4a5c461d` | `492e7dd` |
 
 Stage A was already integrated at `975cb74631536d6aa4e655ea63139fa58999cdbb`.
 The Stage B backend connection, ingestion persistence, API tests, runnable
 demo, and status/documentation updates are committed as
 `4c376e84ea24e7266b6ec3b13baf2cc977ff2d4b` on `integrate/scope`.
-`feat/frontend` was not merged or modified. No changes were pushed.
+Frontend integration and final application checks are recorded in the
+follow-on section below. No changes were pushed.
 
 ## Integrated backend workflow
 
@@ -43,6 +45,22 @@ parsing, TF-IDF retrieval, and scope-aware comparisons.
 The API strips internal upload filesystem paths from returned metadata and
 restores the submitted source filename for attribution.
 
+## Frontend integration follow-on
+
+`feat/frontend` is merged. Its live client now reads and creates projects,
+lists documents within the active project, uploads using the required
+`project_id` form field, and submits selected-document analysis to the real
+pipeline API. Live mode never falls back to synthetic examples. The picker
+accepts the backend's PDF, DOCX, TXT, and Markdown formats. The core package
+dependencies now include SQLAlchemy and `python-multipart`, both required to
+load the upload routes in a clean install.
+
+Frontend checks passed after integration: TypeScript typecheck, 10 Vitest tests,
+and the production Vite build. `npm ci` reports 13 advisories in development
+dependencies (5 moderate, 6 high, 2 critical); the frontend handoff notes that
+resolving them requires major-version upgrades. Review annotations remain
+session-only; project list summaries do not yet include document/run counts.
+
 ## Working endpoints
 
 - `GET /api/health`
@@ -63,7 +81,7 @@ evaluation results.
 
 ## Tests and checks
 
-Using the prepared Python 3.12 environment with `.[dev,database]` and
+Using the prepared Python 3.13 environment with `.[dev]` and
 `scikit-learn>=1.4,<2` installed:
 
 - `python -m pytest -q` — **101 passed, 0 failed**, one upstream Starlette/httpx

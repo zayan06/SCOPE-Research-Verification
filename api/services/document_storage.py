@@ -51,7 +51,7 @@ async def save_upload(
     original = Path(upload.filename or "").name
     suffix = Path(original).suffix.lower()
     if suffix not in SUPPORTED_EXTENSIONS:
-        raise UploadProblem("unsupported_file_type", "Only PDF and DOCX files are supported.", 415)
+        raise UploadProblem("unsupported_file_type", "Supported formats are PDF, DOCX, TXT, and Markdown.", 415)
     limit = upload_limit()
     root = storage_root()
     generated_name = f"{uuid4().hex}{suffix}"

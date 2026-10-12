@@ -25,8 +25,9 @@ Stage B adds a FastAPI backend for project creation, versioned document upload,
 parsing and evidence storage, real pipeline analysis, and persisted run/result
 history. SQLite is the local database. Upload supports PDF, DOCX, TXT,
 Markdown, and `.markdown`; TXT/Markdown parsing works without optional parser
-packages. The React frontend is still a separate workstream and has not been
-merged.
+packages. The React/Vite frontend is now integrated and its live mode connects
+to these project, document, and analysis endpoints. Demo mode remains
+explicitly synthetic.
 
 The repository also contains a 30-paper literature review scaffold and a
 proposed research design. The bibliography has metadata/abstract checks and
@@ -37,7 +38,7 @@ selective full-text appraisal; it is not an exhaustive systematic review.
 Requires Python 3.11 or newer.
 
 ```sh
-python -m pip install -e '.[dev,database]'
+python -m pip install -e '.[dev]'
 python -m pip install 'scikit-learn>=1.4,<2'
 uvicorn api.main:app --reload
 ```
@@ -50,6 +51,22 @@ Configure `SCOPE_DATABASE_URL`, `SCOPE_STORAGE_DIR`,
 `SCOPE_MAX_UPLOAD_BYTES`, `SCOPE_CORS_ORIGINS`, and `SCOPE_MODE` as needed.
 Install `.[ingestion]` for PDF support and `python-docx` separately for DOCX.
 Gemini and dense retrieval are optional and not required for local analysis.
+
+## Run the frontend
+
+In a second terminal, start the Vite app and choose live API mode:
+
+```sh
+cd web
+npm ci
+VITE_API_MODE=live npm run dev
+```
+
+Vite proxies `/api` to `http://127.0.0.1:8000`. The frontend can create
+projects, upload supported documents into the selected project, and submit
+draft analysis. Review notes and decisions are session-only because the API
+does not yet persist review state. To launch with sample data, omit
+`VITE_API_MODE=live`.
 
 ## API workflow
 
@@ -121,14 +138,12 @@ verification. They frame scope-aware comparison as a hypothesis to test, not a
 novelty or performance finding. Students should read the full papers, verify
 interpretations, and write their own final academic analysis.
 
-## Limitations and frontend readiness
+## Limitations
 
 The extractor, retriever, and comparator are English lexical/rule-based
 heuristics; confidence values are not calibrated. Real PDF parsing quality,
 OCR, and page-coordinate provenance have not been verified. Corpus evaluation
 has no connected benchmark adapter. The backend is synchronous and has no
 authentication, authorization, multi-user isolation, or schema migration
-runner; keep it local and single-user. Frontend integration can use the
-documented OpenAPI contract and the project/document/analyze/run-history
-endpoints, but must retain the single-user deployment boundary and show the
-heuristic and evidence-review status clearly.
+runner; keep it local and single-user. Frontend checks are `cd web && npm run
+typecheck && npm test && npm run build`.

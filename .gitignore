@@ -21,6 +21,6 @@ models/
 downloads/
 tmp/
 temp/
-data/outputs/*
-!data/outputs/.gitkeep
+data/outputs/tmp/
+data/outputs/cache/
 .DS_Store

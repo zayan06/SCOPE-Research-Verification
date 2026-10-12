@@ -14,12 +14,14 @@ The closest established work includes SciFact, SciFact-Open, and MultiVerS, whic
 - **RQ2:** Does scope-aware comparison reduce false contradiction labels when claim and evidence differ in dataset, population, method, or experimental condition?
 - **RQ3:** Which dimensions (population, dataset, method, outcome/metric, numerical result, direction, condition, certainty/generalization) account for the largest change in classification quality?
 - **RQ4:** How does retrieval quality, measured independently, affect downstream scope-aware alignment?
+- **RQ5:** At what evidence/scope uncertainty should the comparator abstain, and what is the resulting risk–coverage trade-off compared with always assigning a relation?
 
 ### Hypotheses to test (not findings)
 
 - **H1:** Adding explicit scope comparisons will improve macro-F1 or reduce a pre-registered false-contradiction error rate over a text-only NLI/alignment baseline on a scope-annotated test set.
 - **H2:** A scope-dimension ablation will show that at least one dimension changes errors involving mismatched study context or overgeneralization.
 - **H3:** Higher evidence recall at fixed top-*k* will improve downstream classification only when retrieved passages contain enough information to adjudicate the claim; retrieval relevance alone will not guarantee better alignment.
+- **H4:** A selective comparator can lower error among answered pairs by abstaining on some uncertain cases; the trade-off must be reported as risk against coverage, not as accuracy alone.
 
 Reject, revise, or narrow these hypotheses based on sample size and annotation agreement. Do not report them as findings before running the planned analysis.
 
@@ -37,7 +39,7 @@ Reject, revise, or narrow these hypotheses based on sample size and annotation a
    - **insufficient_evidence:** the passage does not establish either support or contradiction, including unresolved/missing key evidence;
    - **unrelated:** the passage does not materially address the atomic claim.
 
-These definitions overlap in hard cases, especially `qualify`, `scope_mismatch`, and `insufficient_evidence`. The annotation guide must add examples and precedence rules, and students should report agreement and adjudication. Do not treat unknown scope as compatible by default.
+These definitions overlap in hard cases, especially `qualify`, `scope_mismatch`, and `insufficient_evidence`. Proposed precedence: mark `unrelated` only if the passage does not address the proposition; mark `insufficient_evidence` when relevance exists but evidence is absent/ambiguous or a decisive field is unknown; mark `scope_mismatch` only when a known incompatibility blocks inference; mark `qualify` when evidence supports a narrower/conditional proposition; use `contradict` only when compatible scope and relation direction directly conflict; use `support` only when the stated scope is covered. This is a draft rule requiring expert review. The annotation guide must add examples and precedence rules, and students should report agreement and adjudication. Do not treat unknown scope as compatible by default.
 
 ## Proposed system outline
 
@@ -153,3 +155,67 @@ Report sample counts and confidence intervals where feasible. Do not invent scor
 ## Code artifacts required before reporting results
 
 Current interfaces are documented in the repository contract/handoff. Needed artifacts include: parser with source offsets; deterministic claim extraction baseline; BM25/TF-IDF index; comparator with explicit unknown values and dimension-level explanations; pipeline wiring; versioned sample/benchmark manifests; annotation guide and adjudicated labels; evaluation script with fixed splits and metrics; reproducible run configuration; error-analysis outputs. These artifacts are proposals; none should be described as present until merged and verified.
+
+
+## RQ-to-measurement plan
+
+| Question | Unit and comparison | Primary measures | Interpretation guardrail |
+|---|---|---|---|
+| RQ1 | Held-out claim–evidence pairs; text-only verifier vs same verifier plus explicit scope fields, fixed retrieved candidates | Macro-F1 across six relations; per-class precision/recall/F1; paired bootstrap confidence interval | Use identical data, candidates, and backbone. A gain on one benchmark does not establish general scientific validity. |
+| RQ2 | Pairs with adjudicated known population/dataset/method/condition differences | False-contradiction rate (predicted `contradict` among gold non-contradiction cases), plus precision/recall for `scope_mismatch` and `qualify` | Predefine subgroup and gold labels; report counts and uncertainty. Do not label all different studies as incompatible. |
+| RQ3 | Dimension ablations on the same test pairs | Change in macro-F1 and target error rates after removing each dimension; paired confidence intervals | Correlated dimensions and missing data mean single-feature ablations are diagnostic, not causal proof of independent scientific importance. |
+| RQ4 | Each claim with a fixed corpus and retrieval cutoff *k* | Evidence Recall@k / Success@k, MRR if ranked gold evidence exists; downstream macro-F1 and evidence-conditioned performance | Report oracle-evidence results separately from end-to-end results. Retrieval quality and comparison quality are distinct. |
+| RQ5 | Comparator predictions across confidence/abstention thresholds | Coverage = answered pairs / all eligible pairs; selective risk = error rate among answered pairs; risk–coverage curve and area under curve where sufficiently sampled; abstention precision/recall for gold `insufficient_evidence` | State what “abstain” maps to in the six-label contract. Calibrate on development data, freeze threshold before test, and report class balance. |
+
+Abstention frequency alone is not a quality measure. Report coverage together with selective risk, the gold insufficiency detection measures, and a fixed-threshold confusion matrix. If no calibrated probability exists, use a documented deterministic uncertainty rule and call the resulting curve a threshold analysis, not probability calibration.
+
+## More explicit proposed procedure
+
+```text
+Input: draft text D, selected paper set P, retrieval depth k, frozen model/config M
+C <- extract_atomic_claims(D); retain original span and reviewer edits
+E <- parse(P); retain document, section, page, offsets, and exact text when available
+for claim c in C:
+    Q <- retrieve(c, E, k)
+    for passage e in Q:
+        claim_scope <- extract_or_annotate_scope(c)
+        evidence_scope <- extract_or_annotate_scope(e)
+        for dimension j in schema:
+            q[j] <- compare(claim_scope[j], evidence_scope[j])
+            if either value is unknown: q[j] <- unknown
+        proposition_signal <- compare_entities_predicate_polarity_numbers_and_modality(c, e)
+        candidate_relation <- apply_predeclared_precedence(proposition_signal, q)
+        uncertainty <- estimate_from_calibrated_model_or_explicit_unknown/ conflict rules
+        if uncertainty exceeds development-frozen abstention threshold:
+            candidate_relation <- insufficient_evidence
+        emit relation, dimension statuses, evidence quote/span, explanation, uncertainty, versions
+show result for researcher correction; record edits separately from model output
+```
+
+The pseudocode is a proposal. It assumes a claim can be decomposed without losing quantifiers or conditional clauses, a passage can be aligned to the correct document context, and annotation rules can identify known incompatibilities. If these assumptions fail, preserve the result as unknown/insufficient and expose the passage for review.
+
+### Dimension and relation score sketch
+
+Let `z(c,e)` be a proposition-level representation, `q_j(c,e)` a categorical comparison for dimension `j`, and `u_j` indicate whether both values are known. One trainable baseline can concatenate encoded text and one-hot comparison statuses:
+
+\[h = [z(c,e); q_1; \ldots; q_J; u_1; \ldots; u_J], \quad p(y\mid c,e)=\operatorname{softmax}(W h+b).\]
+
+An explicit rule-based comparator is an alternative: compute proposition polarity/direction, then apply the relation precedence rules. Evaluate both only if implementation effort permits; do not call hand-written rules a learned model. A scope coverage diagnostic is `coverage_scope = sum_j u_j / J`; report alongside any aggregate compatibility score so a high score on one known field cannot hide many unknown fields. No universal weights are justified yet, so avoid a weighted “scope score” in the main outcome unless weights are predeclared and sensitivity-tested.
+
+### Alternatives considered
+
+- **Pure retrieval similarity:** cheapest and useful for candidate ranking, but does not establish relation or shared scope; retain as a retrieval baseline.
+- **Single NLI/verifier label:** simpler and comparable to prior work, but hides which study conditions were compared; use as the main comparator baseline.
+- **Joint retrieval/rationale/verdict model:** established in ARSJoint and MultiVerS; potentially stronger but makes it harder to isolate the value of explicit scope and may exceed prototype compute.
+- **Human-entered scope fields:** improves control in a pilot but costs annotation time; compare with automatically extracted and human-corrected fields to separate extraction error from comparison error.
+- **LLM-based extraction/comparison:** potentially flexible but adds cost, service variability, privacy concerns, and calibration issues; optional adapter only, never a required local dependency.
+
+## Dataset access and licensing notes
+
+| Dataset | Intended use | Labels/fit | Access and license status to verify before redistribution/use |
+|---|---|---|---|
+| SciFact (R02) | Primary scientific retrieval/rationale/verdict baseline | Support/refute/no evidence; abstracts; evidence rationales. Requires mapping to six SCOPE labels and scope annotations. | Repository states claim/evidence annotations are CC BY 4.0, abstracts are inherited from S2ORC under ODC-By 1.0, and code is Apache 2.0. Review the [license file](https://github.com/allenai/scifact/blob/master/LICENSE.md); retain separate corpus provenance. |
+| SciFact-Open (R03) | Open-corpus retrieval stress test | Pooled evidence; includes special-case evidence; pooled candidates cannot be treated as exhaustive negatives. | Dataset docs identify source/provenance and refer to S2ORC corpus; inspect [data documentation](https://github.com/dwadden/scifact-open/blob/main/doc/data.md) and upstream S2ORC terms before copying or redistribution. License for each component must be confirmed from repository files at download time. |
+| Evidence Inference 2.0 (R07) | Complementary outcome-conditioned clinical task | Increase/decrease/no significant difference with ICO prompt; not directly equivalent to SCOPE labels. | Download and documentation are provided by the [project site](https://evidence-inference.ebm-nlp.com/download/); article full-text rights may vary by source/PMC license. Confirm current terms and each article license; do not assume a blanket corpus license from public availability. |
+
+Use benchmark files locally only after recording source URL, release/version/date, checksum, license text, access conditions, and redistribution decision in a manifest. An academic paper being open access does not automatically license its underlying corpus. Avoid bundling publisher full text.

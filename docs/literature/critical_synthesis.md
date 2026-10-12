@@ -43,9 +43,38 @@ The more defensible research question is whether a transparent, explicit, dimens
 
 The current shared contract already names the dimensions and distinguishes `compatible`, `incompatible`, `partially_compatible`, and `unknown`; it also distinguishes `support`, `contradict`, `qualify`, `scope_mismatch`, `insufficient_evidence`, and `unrelated` ([contracts](../../src/scopecheck/contracts.py)). Those are proposed software labels, not validated scientific categories. Annotation guidelines and inter-annotator agreement are still required.
 
+## Research gap assessment: three evidence levels
+
+### A. Limitations and boundaries supported by the literature
+
+- Open-corpus evidence labels are necessarily incomplete when papers are pooled rather than exhaustively annotated; SciFact-Open states exhaustive annotation over a 500K abstract corpus is infeasible [R03].
+- Narrow evidence can support a special case of a broader claim; SciFact-Open reports this phenomenon directly [R03]. This makes generalization qualification a real benchmark case, though it does not prove a specific SCOPE taxonomy is needed.
+- Rationale sentences can lose contextual information such as qualifiers/coreference even when a model uses full-document context; MultiVerS discusses this issue [R04].
+- Outcome-conditioned intervention/comparator reasoning is already operationalized for clinical trials by Evidence Inference. Its task omits a separate participant field and assumes the supplied article context [R07]. This is a boundary of that task, not a defect for its stated goal.
+- SciFact is abstract-centered; this gives less direct coverage of methods, results tables, and some full-text context than a full-paper setting [R02].
+
+### B. Plausible limitations needing investigation
+
+The following are testable concerns derived from task boundaries and scientific practice; they are not presented as findings of every cited paper:
+
+- **Population/dataset/method/condition mismatch:** topical or lexical overlap may not establish compatibility across study populations, datasets, experimental methods, or conditions. Design controlled examples and annotate whether each field is known, incompatible, or unknown.
+- **Outcome and metric mismatch:** two studies can report related outcomes on different scales, time horizons, or definitions. Unit normalization and metric equivalence need domain review.
+- **Numerical and direction mismatch:** rounding, denominators, confidence intervals, subgroup results, and effect direction may be misread, especially when evidence is in a table. Parser and numerical extraction error must be evaluated separately.
+- **Causal versus correlational language:** association in evidence does not establish intervention effect or causation. Annotate claim type and test whether the relation policy avoids upgrading causal strength.
+- **Overgeneralization and qualification:** evidence for a subset may qualify a universal or population-wide claim; determine whether raters can distinguish `qualify` from `scope_mismatch` consistently.
+- **Evidence uncertainty and context:** an unobserved field may mean unreported, not applicable, or parser-missed; contradictions can be resolved elsewhere in the paper. Human context review and abstention need evaluation.
+
+### C. Proposed SCOPE hypotheses
+
+1. Explicit, typed dimension comparisons may improve reviewer-visible explanations and/or relation classification against a matched text-only verifier. This is untested.
+2. A policy requiring compatible scope before assigning contradiction may reduce false contradictions on known scope-shift cases. This is untested and must not suppress genuine within-scope contradiction.
+3. Field-wise ablations may identify which dimensions help on a bounded annotated set. This is an exploratory hypothesis; correlated fields and limited sample size constrain interpretation.
+4. An uncertainty-aware comparator may trade coverage for lower error among answered pairs. Report risk–coverage, not abstention frequency alone.
+5. A deterministic local baseline may make the prototype reproducible without paid services; that is an engineering objective, not a research result.
+
 ## Gaps that remain plausible, not proven
 
-The following are hypotheses for a student project to investigate, not literature-wide facts:
+The following additional design questions remain hypotheses for a student project to investigate, not literature-wide facts:
 
 1. A reviewer-facing, typed scope comparison may make reasons for a relation decision easier to inspect than one holistic score. This must be compared with rationale-bearing baselines such as SciFact and MultiVerS [R02, R04].
 2. A broader schema spanning populations, datasets, methods, metrics, numerical values, conditions, certainty, and generalization may be useful outside the clinical intervention/outcome setting [R07]. The cost and reliability of extracting these dimensions are unknown.

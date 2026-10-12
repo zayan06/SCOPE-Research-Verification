@@ -1,19 +1,62 @@
-# SCOPE — Scope-Aware Claim–Evidence Alignment
+# SCOPE
 
-SCOPE is a local-first research workspace foundation for examining whether
-passages in selected academic literature support, contradict, qualify, or
-insufficiently address claims in a research draft. It is decision support and
-does not determine objective scientific truth.
+**Scope-Aware Claim–Evidence Alignment for Scientific Literature Verification**
 
-## Repository status
+## Overview
 
-This baseline establishes shared contracts, package metadata, one health
-endpoint, module interfaces, tests, and architecture/API documentation.
-Document parsing, claim extraction, retrieval, scope comparison, corpus
-analysis, persistence, and frontend logic are not implemented here. Interface
-functions explicitly raise `NotImplementedError` until their workstreams land.
+SCOPE is a research prototype for helping researchers inspect whether selected
+literature passages support, contradict, qualify, or insufficiently address
+claims in a draft. It reports evidence alignment for human review; it does not
+determine objective scientific truth.
 
-## Local setup
+## Problem statement and research objective
+
+Semantic retrieval can find passages about the same topic without establishing
+that they address the same conclusion under compatible populations, datasets,
+methods, outcomes, metrics, or experimental conditions. For example, evidence
+that a method improved accuracy on one dataset does not by itself establish a
+draft claim that it improves accuracy across all datasets.
+
+The research objective is to make those scope dimensions explicit in the
+claim–evidence comparison and preserve traceability to source passages. The
+central hypothesis is that explicit scope modeling may help distinguish direct
+contradictions from claims that differ in experimental context. This hypothesis
+has not yet been evaluated.
+
+## Proposed methodology
+
+The planned pipeline parses scientific documents into source-addressable
+evidence chunks, extracts atomic claims and scope fields, retrieves candidate
+passages, compares claims and passages across explicit dimensions, and
+evaluates results against documented benchmarks. Missing scope is represented
+as unknown rather than treated as agreement. Research design and literature
+drafts are being developed on the dedicated literature workstream branch and
+require review before integration.
+
+## Architecture
+
+The Python package under `src/scopecheck/` defines shared Pydantic contracts
+and module interfaces. `api/` contains the minimal FastAPI application;
+`web/` is reserved for the React client. Integration boundaries and planned
+data flow are documented in
+[`docs/architecture/FOUNDATION.md`](docs/architecture/FOUNDATION.md).
+
+## Current implementation
+
+The foundation currently provides:
+
+- Installable Python package metadata and typed shared contracts.
+- Contract validation tests.
+- `GET /api/health` in FastAPI.
+- Interface stubs for ingestion, claim extraction, retrieval, comparison, and
+  pipeline orchestration.
+- API specifications and research/architecture documentation scaffolding.
+
+Document parsing, claim extraction, evidence retrieval, scope comparison,
+corpus evaluation, persistence, and frontend behavior are not implemented.
+Research and literature documents are drafts and require source verification.
+
+## Installation and running
 
 Requires Python 3.11 or newer.
 
@@ -25,33 +68,29 @@ pytest
 uvicorn api.main:app --reload
 ```
 
-The only live route in this foundation is
-`GET http://127.0.0.1:8000/api/health`. The OpenAPI UI is at `/docs`. Other API
-routes are specified in `docs/API.md` but are not yet implemented.
+The health endpoint is `http://127.0.0.1:8000/api/health`; FastAPI docs are at
+`http://127.0.0.1:8000/docs`. Optional dependency groups are available for
+ingestion, retrieval experiments, and database adapters. The foundation does
+not require paid APIs, cloud services, PostgreSQL, Pinecone, or external
+credentials.
 
-Optional integrations are isolated as extras: `.[ingestion]`, `.[retrieval]`,
-and `.[database]`. No paid API, cloud service, PostgreSQL server, Firebase,
-Pinecone, or external credentials are needed for the foundation.
+## Evaluation status
 
-## Core integration interfaces
+No scientific benchmark or model evaluation has been run. The current tests
+validate data contracts and the health route; they are software checks, not
+evidence for the research hypothesis. Benchmark data must include provenance,
+license, annotation schema, and version before results are reported.
 
-Canonical typed models and enums are in `src/scopecheck/contracts.py`.
-Workstreams implement these signatures without changing their contracts:
+## Limitations and future work
 
-```python
-parse_document(path: str | Path, document_id: str) -> list[EvidenceChunk]
-extract_claims(text: str, document_id: str) -> list[AtomicClaim]
-build_index(chunks: Sequence[EvidenceChunk]) -> EvidenceIndex
-compare_claim_to_hit(claim: AtomicClaim, hit: RetrievalHit) -> ComparisonResult
-```
+The product pipeline is not implemented, the API has no authentication or
+multi-user isolation, and no persistence layer is configured. Next workstreams
+will implement ingestion, claim extraction, retrieval, alignment, evaluation,
+backend, frontend, and verified literature research behind the shared
+contracts.
 
-`EvidenceIndex.search(query, k=5, allowed_document_ids=None)` returns
-`list[RetrievalHit]`. See `docs/architecture/FOUNDATION.md` and
-`CONTRIBUTING.md` for ownership and integration instructions.
+## References
 
-## Research integrity and AI assistance
-
-The repository structure, contracts, documentation scaffolding, and contract
-tests were generated with OpenAI Codex from the user-provided project brief. No
-sources, experimental results, evaluation metrics, or student contributions are
-fabricated. Maintain this record as additional tools are used.
+Bibliographic details and source claims must be checked against primary sources
+before academic submission. No literature citations are asserted in this
+README.

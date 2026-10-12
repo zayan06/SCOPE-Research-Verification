@@ -59,9 +59,8 @@ score is unavailable (`None`) and categorical compatibility is `unknown`.
 Default weights are explicit heuristic priorities: population, outcome/metric,
 direction, and numbers receive weight 1.5; entity/intervention receives 1.25;
 dataset, method, and experimental conditions receive 1.0; certainty receives
-0.75; lexical agreement receives 0.5. The scope-aware calculation currently
-uses scientific scope comparisons; lexical agreement is not scored as scope
-agreement. A claim-type multiplier increases number weight for quantitative
+0.75. The scope-aware calculation uses scientific scope comparisons; lexical
+agreement is used for relevance but is not scored as scope agreement. A claim-type multiplier increases number weight for quantitative
 claims, direction weight for comparative claims, methodology weight for causal
 claims, and population/certainty weights for generalization claims.
 
@@ -198,6 +197,7 @@ returned objects contain individual field explanations.
     "dimension_comparisons": [
       {"dimension": "dataset_compatibility", "status": "incompatible", "explanation": "Dataset: claim=ImageNet; evidence=CIFAR-10."},
       {"dimension": "outcome_metric_compatibility", "status": "compatible", "explanation": "Outcome: claim=accuracy; evidence=accuracy."},
+      {"dimension": "outcome_metric_compatibility", "status": "compatible", "explanation": "Metric: claim=accuracy; evidence=accuracy."},
       {"dimension": "relation_direction_agreement", "status": "compatible", "explanation": "Direction: claim=positive; evidence=positive."}
     ],
     "explanation": "Material dataset mismatch prevents direct comparison; score=0.818 over known weighted dimensions.",
@@ -214,6 +214,7 @@ returned objects contain individual field explanations.
     "dimension_comparisons": [
       {"dimension": "population_compatibility", "status": "compatible", "explanation": "Population: claim=adults; evidence=adults."},
       {"dimension": "outcome_metric_compatibility", "status": "compatible", "explanation": "Outcome: claim=mortality; evidence=mortality."},
+      {"dimension": "outcome_metric_compatibility", "status": "compatible", "explanation": "Metric: claim=mortality; evidence=mortality."},
       {"dimension": "relation_direction_agreement", "status": "incompatible", "explanation": "Direction: claim=negative; evidence=positive."}
     ],
     "explanation": "Opposite directions with no material scope mismatch; score=0.750 over known weighted dimensions.",

@@ -37,8 +37,6 @@ _DEFAULT_WEIGHTS: dict[ScopeDimension, float] = {
     ScopeDimension.CERTAINTY_GENERALIZATION_MISMATCH: 0.75,
     ScopeDimension.RELATION_DIRECTION_AGREEMENT: 1.5,
     ScopeDimension.NUMERICAL_AGREEMENT: 1.5,
-    ScopeDimension.ENTITY_AGREEMENT: 1.25,
-    ScopeDimension.LEXICAL_AGREEMENT: 0.5,
 }
 
 _TYPE_WEIGHT_MULTIPLIERS: dict[ClaimType, dict[ScopeDimension, float]] = {

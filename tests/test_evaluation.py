@@ -93,3 +93,27 @@ def test_cli_serializes_all_required_artifacts(tmp_path):
     assert {p.name for p in out.iterdir()} == {"predictions.csv", "metrics.json", "confusion_matrix.csv",
                                                "error_analysis.csv", "experiment_metadata.json"}
     assert json.loads((out / "metrics.json").read_text())["sample_count"] == 6
+
+
+def test_tfidf_bm25_cli_on_synthetic_judgments(tmp_path):
+    docs = tmp_path / "docs.jsonl"
+    docs.write_text('\n'.join([
+        json.dumps({"doc_id": "d1", "text": "alpha asthma cohort treatment"}),
+        json.dumps({"doc_id": "d2", "text": "battery lithium cycle cells"}),
+    ]) + "\n")
+    queries = tmp_path / "queries.jsonl"
+    queries.write_text('\n'.join([
+        json.dumps({"query_id": "q1", "text": "asthma treatment", "relevant_doc_ids": ["d1"]}),
+        json.dumps({"query_id": "q2", "text": "lithium battery", "relevant_doc_ids": ["d2"]}),
+    ]) + "\n")
+    out = tmp_path / "retrieval"
+    proc = subprocess.run([sys.executable, "scripts/run_retrieval_baselines.py", "--documents", str(docs),
+                           "--queries", str(queries), "--output-dir", str(out), "--dataset-version", "toy-v1"],
+                          cwd=Path.cwd(), text=True, capture_output=True,
+                          env={**os.environ, "PYTHONPATH": str(Path.cwd() / "src")})
+    assert proc.returncode == 0, proc.stderr
+    metrics = json.loads((out / "metrics.json").read_text())
+    assert metrics["tfidf"]["recall@1"] == 1
+    assert metrics["bm25"]["recall@1"] == 1
+    assert (out / "predictions.csv").exists()
+    assert (out / "experiment_metadata.json").exists()
